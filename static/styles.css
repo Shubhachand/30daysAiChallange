@@ -1,0 +1,33 @@
+body {
+    background: #0f0f0f;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    padding: 50px;
+    margin: 0;
+}
+
+h1 {
+    font-size: 3rem;
+    color: #00ffd5;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px #00ffd5;
+}
+
+button {
+    background-color: #00ffd5;
+    color: #000;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 0 15px #00ffd5;
+}
+
+button:hover {
+    background-color: #00e6c0;
+    box-shadow: 0 0 25px #00ffd5, 0 0 5px #00ffd5 inset;
+    transform: scale(1.05);
+}
