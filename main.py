@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import requests
 import os
@@ -7,11 +10,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 MURF_API_KEY = os.getenv("MURF_API_KEY")
 
 class TTSRequest(BaseModel):
     text: str
+
+@app.get("/", response_class=HTMLResponse)
+def get_home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/generate")
 def generate_tts(data: TTSRequest):
