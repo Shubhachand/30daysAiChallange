@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import requests
 import os
+import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -48,3 +49,24 @@ def generate_tts(data: TTSRequest):
         }
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
+
+
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.post("/upload-audio")
+async def upload_audio(file: UploadFile = File(...)):
+    try:
+        file_location = os.path.join(UPLOAD_DIR, file.filename)
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        return {
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "size_in_kb": round(os.path.getsize(file_location) / 1024, 2)
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
