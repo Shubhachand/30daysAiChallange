@@ -8,7 +8,6 @@
 <body>
   <div class="container">
 
-    <!-- 🔊 Text-to-Speech Section -->
     <section class="tts-section">
       <h2>🎙️ Generate Speech with Murf</h2>
       <input
@@ -17,8 +16,6 @@
         placeholder="Enter your text here..."
         aria-label="Text input for TTS"
       />
-
-      <!-- 📤 Controls for TTS -->
       <div class="tts-controls">
         <button onclick="sendText()">Generate Audio</button>
         <br>
@@ -28,26 +25,18 @@
 
     <hr />
 
-    <!-- 🎧 Echo Bot Section -->
     <section class="echo-section">
       <h2>🎧 Echo Bot</h2>
-
-      <!-- 🔘 Recording Controls -->
       <div class="echo-controls">
         <button id="startBtn" onclick="startRecording()">🎙️ Start Recording</button>
         <button id="stopBtn" onclick="stopRecording()" disabled>⏹️ Stop Recording</button>
       </div>
-
-      <!-- 📊 Audio Visualizer -->
       <canvas id="visualizer" width="500" height="100"></canvas>
-
-      <!-- 🔁 Echo Playback -->
       <div class="echo-playback">
         <audio id="echoPlayer" controls></audio>
       </div>
-
-      <!-- 📤 Upload Feedback -->
       <div id="uploadStatus" class="upload-status"></div>
+      <div id="transcriptionStatus" class="upload-status"></div>
     </section>
 
   </div>

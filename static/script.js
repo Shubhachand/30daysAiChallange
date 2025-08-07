@@ -8,7 +8,6 @@ const startRecording = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    // Visualizer Setup
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
     analyser = audioContext.createAnalyser();
@@ -39,7 +38,6 @@ const startRecording = async () => {
 
     draw();
 
-    // Recorder Setup
     mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) recordedChunks.push(e.data);
@@ -54,18 +52,17 @@ const startRecording = async () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       stream.getTracks().forEach(track => track.stop());
 
-      uploadRecordedAudio(blob);
+      handleUploadAndTranscription(blob);
     };
 
     mediaRecorder.start();
 
-    // UI
     document.getElementById("startBtn").disabled = true;
     document.getElementById("stopBtn").disabled = false;
     document.getElementById("startBtn").classList.add("recording-active");
 
   } catch (err) {
-    alert("🎙️ Please allow microphone access.");
+    alert("Please allow microphone access.");
     console.error("Recording failed:", err);
   }
 };
@@ -79,32 +76,46 @@ const stopRecording = () => {
   }
 };
 
-const uploadRecordedAudio = async (blob) => {
-  const formData = new FormData();
-  formData.append("file", blob, "recorded-echo.webm");
+const handleUploadAndTranscription = async (blob) => {
+  const uploadStatus = document.getElementById("uploadStatus");
+  const transcriptionStatus = document.getElementById("transcriptionStatus");
 
-  const statusDiv = document.getElementById("uploadStatus");
-  statusDiv.textContent = "Uploading...";
+  uploadStatus.textContent = "Uploading...";
+  transcriptionStatus.textContent = "";
+
+  const formData = new FormData();
+  formData.append("file", blob, "recorded-audio.webm");
 
   try {
-    const res = await fetch("/upload-audio", {
+    const uploadRes = await fetch("/upload-audio", {
       method: "POST",
       body: formData,
     });
 
-    if (!res.ok) throw new Error("Upload failed");
+    if (!uploadRes.ok) throw new Error("Upload failed");
+    const uploadResult = await uploadRes.json();
+    uploadStatus.textContent = `✅ Uploaded: ${uploadResult.filename} (${uploadResult.size_in_kb} KB)`;
 
-    const result = await res.json();
-    statusDiv.textContent = `✅ Uploaded: ${result.filename} (${result.size_in_kb} KB)`;
+    const transcribeRes = await fetch("/transcribe/file", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!transcribeRes.ok) throw new Error("Transcription failed");
+    const transcribeResult = await transcribeRes.json();
+    transcriptionStatus.textContent = `📝 Transcription: ${transcribeResult.text}`;
 
   } catch (err) {
-    console.error("❌ Upload failed:", err);
-    statusDiv.textContent = "❌ Upload failed";
+    console.error(err);
+    uploadStatus.textContent = "❌ Upload failed";
+    transcriptionStatus.textContent = "❌ Transcription failed";
   }
 };
 
 const sendText = async () => {
   const text = document.getElementById("textInput").value;
+  if (!text.trim()) return alert("Please enter some text.");
+
   const response = await fetch("/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
