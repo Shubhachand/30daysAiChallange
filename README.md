@@ -13,7 +13,8 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
 | ✅ 4 | Visualize live audio waveform                | ✅ Done |
 | ✅ 5 | Upload audio to server via endpoint          | ✅ Done |
 | ✅ 6 | Transcribe audio using AssemblyAI            | ✅ Done |
-| ⏳ 7–29 | Coming soon...                            | 🚧 Ongoing |
+| ✅ 7 | Echo Bot v2 – Record → Transcribe → AI Voice | ✅ Done |
+| ⏳ 8–29 | Coming soon...                            | Ongoing |
 | 🔜 30 | Final App + LinkedIn Post + Deployment 🎉    | Pending |
 
 ---
@@ -66,6 +67,17 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
 - Displayed transcription on frontend after recording
 
 ---
+### ✅  Day 7 – Echo Bot v2 🎤✨
+
+- Record audio in the browser
+- Upload to backend via /tts/echo endpoint
+ - Transcribe audio using AssemblyAI
+ - Generate AI voice from transcription using Murf API
+ - Play back the AI-generated voice in the browser
+ - It’s like talking to yourself… but in a perfect studio voice 🎙️
+---
+
+
 
 ## 🛠 Tech Stack
 
