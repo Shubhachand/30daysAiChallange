@@ -1,95 +1,99 @@
 from fastapi import FastAPI, HTTPException, Request, File, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
 import assemblyai as aai
 import requests
 import os
 import shutil
+import uuid
+import aiofiles
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
-MURF_API_KEY = os.getenv("MURF_API_KEY")
-ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
-aai.settings.api_key = ASSEMBLYAI_API_KEY
-
-
 app = FastAPI()
-
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+MURF_API_KEY = os.getenv("MURF_API_KEY")
+ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 
-class TTSRequest(BaseModel):
-    text: str
-
+# Home route
 @app.get("/", response_class=HTMLResponse)
 def get_home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+# Save uploaded audio temporarily
+async def save_temp_file(file: UploadFile):
+    temp_filename = f"temp_{uuid.uuid4()}.webm"
+    async with aiofiles.open(temp_filename, 'wb') as out_file:
+        content = await file.read()
+        await out_file.write(content)
+    return temp_filename
 
-@app.post("/generate")
-def generate_tts(data: TTSRequest):
+# Transcribe audio with AssemblyAI
+def transcribe_with_assemblyai(file_path):
+    upload_url = "https://api.assemblyai.com/v2/upload"
+    headers = {"authorization": ASSEMBLYAI_API_KEY}
+
+    with open(file_path, "rb") as f:
+        upload_res = requests.post(upload_url, headers=headers, data=f)
+    audio_url = upload_res.json()["upload_url"]
+
+    transcript_res = requests.post(
+        "https://api.assemblyai.com/v2/transcript",
+        headers=headers,
+        json={"audio_url": audio_url}
+    )
+    transcript_id = transcript_res.json()["id"]
+
+    while True:
+        poll_res = requests.get(f"https://api.assemblyai.com/v2/transcript/{transcript_id}", headers=headers)
+        status = poll_res.json()["status"]
+        if status == "completed":
+            return poll_res.json()["text"]
+        elif status == "error":
+            raise Exception("Transcription failed")
+
+# Generate Murf AI voice
+def generate_murf_voice(text):
     url = "https://api.murf.ai/v1/speech/generate"
     headers = {
         "api-key": MURF_API_KEY,
         "Content-Type": "application/json"
     }
     payload = {
-        "text": data.text,
         "voiceId": "en-US-natalie",
-        "modelVersion": "GEN2",
+        "text": text,
         "format": "MP3"
     }
+    res = requests.post(url, headers=headers, json=payload)
+    if res.status_code != 200:
+        raise Exception(f"Murf API error: {res.text}")
+    return res.json()["audioFile"]
 
-    response = requests.post(url, json=payload, headers=headers)
-
-    if response.status_code == 200:
-        result = response.json()
-        return {
-            "audioUrl": result.get("audioFile"),
-            "length": result.get("audioLengthInSeconds"),
-            "charsUsed": result.get("consumedCharacterCount")
-        }
-    else:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
-
-
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-@app.post("/upload-audio")
-async def upload_audio(file: UploadFile = File(...)):
+# Echo Bot v2 Endpoint
+@app.post("/tts/echo")
+async def tts_echo(file: UploadFile = File(...)):
+    temp_path = await save_temp_file(file)
     try:
-        file_location = os.path.join(UPLOAD_DIR, file.filename)
-        with open(file_location, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        return {
-            "filename": file.filename,
-            "content_type": file.content_type,
-            "size_in_kb": round(os.path.getsize(file_location) / 1024, 2)
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        transcription = transcribe_with_assemblyai(temp_path)
+        murf_audio_url = generate_murf_voice(transcription)
+        return JSONResponse({"audioUrl": murf_audio_url})
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
-@app.post("/transcribe/file")
-def transcribe_file(file: UploadFile = File(...)):
+@app.post("/generate")
+async def generate_tts(request: Request):
+    data = await request.json()
+    text = data.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
     try:
-        audio_data = file.file.read()
-        transcriber = aai.Transcriber()
-        transcript = transcriber.transcribe(audio_data)
-
-        return {
-            "text": transcript.text,
-            "confidence": transcript.words[0].confidence if transcript.words else None
-        }
-
+        murf_audio_url = generate_murf_voice(text)
+        return JSONResponse({"audioUrl": murf_audio_url})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

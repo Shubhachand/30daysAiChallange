@@ -20,6 +20,8 @@
         <button onclick="sendText()">Generate Audio</button>
         <br>
         <audio id="player" controls></audio>
+        
+
       </div>
     </section>
 
@@ -33,10 +35,12 @@
       </div>
       <canvas id="visualizer" width="500" height="100"></canvas>
       <div class="echo-playback">
+        <div id="uploadStatus" class="upload-status"></div>
         <audio id="echoPlayer" controls></audio>
       </div>
-      <div id="uploadStatus" class="upload-status"></div>
       <div id="transcriptionStatus" class="upload-status"></div>
+      
+        <div id="uploadStatus"></div>
     </section>
 
   </div>

@@ -45,14 +45,12 @@ const startRecording = async () => {
 
     mediaRecorder.onstop = () => {
       const blob = new Blob(recordedChunks, { type: "audio/webm" });
-      const audioURL = URL.createObjectURL(blob);
-      document.getElementById("echoPlayer").src = audioURL;
-
       cancelAnimationFrame(animationId);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       stream.getTracks().forEach(track => track.stop());
 
-      handleUploadAndTranscription(blob);
+      // Call new Echo v2 handler
+      handleEchoFlow(blob);
     };
 
     mediaRecorder.start();
@@ -76,42 +74,39 @@ const stopRecording = () => {
   }
 };
 
-const handleUploadAndTranscription = async (blob) => {
+// Echo v2 handler — audio → backend → transcription + Murf voice
+const handleEchoFlow = async (blob) => {
   const uploadStatus = document.getElementById("uploadStatus");
   const transcriptionStatus = document.getElementById("transcriptionStatus");
 
-  uploadStatus.textContent = "Uploading...";
+  uploadStatus.textContent = "Processing... 🎤";
   transcriptionStatus.textContent = "";
 
   const formData = new FormData();
   formData.append("file", blob, "recorded-audio.webm");
 
   try {
-    const uploadRes = await fetch("/upload-audio", {
-      method: "POST",
-      body: formData,
-    });
+    const res = await fetch("/tts/echo", { method: "POST", body: formData });
 
-    if (!uploadRes.ok) throw new Error("Upload failed");
-    const uploadResult = await uploadRes.json();
-    uploadStatus.textContent = `✅ Uploaded: ${uploadResult.filename} (${uploadResult.size_in_kb} KB)`;
+    if (!res.ok) throw new Error("Echo flow failed");
+    const data = await res.json();
 
-    const transcribeRes = await fetch("/transcribe/file", {
-      method: "POST",
-      body: formData,
-    });
+    // Play Murf-generated voice
+    document.getElementById("echoPlayer").src = data.audioUrl;
 
-    if (!transcribeRes.ok) throw new Error("Transcription failed");
-    const transcribeResult = await transcribeRes.json();
-    transcriptionStatus.textContent = `📝 Transcription: ${transcribeResult.text}`;
-
+    // Status messages
+    uploadStatus.textContent = "✅ Voice ready";
+    transcriptionStatus.textContent = data.transcription
+      ? `📝 ${data.transcription}`
+      : "";
   } catch (err) {
     console.error(err);
-    uploadStatus.textContent = "❌ Upload failed";
-    transcriptionStatus.textContent = "❌ Transcription failed";
+    uploadStatus.textContent = "❌ Processing failed";
+    transcriptionStatus.textContent = "";
   }
 };
 
+// Text → Murf TTS
 const sendText = async () => {
   const text = document.getElementById("textInput").value;
   if (!text.trim()) return alert("Please enter some text.");
