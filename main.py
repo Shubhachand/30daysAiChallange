@@ -8,6 +8,7 @@ import os
 import shutil
 import uuid
 import aiofiles
+import google.generativeai as genai 
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +19,8 @@ templates = Jinja2Templates(directory="templates")
 
 MURF_API_KEY = os.getenv("MURF_API_KEY")
 ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
-
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=GEMINI_API_KEY)
 # Home route
 @app.get("/", response_class=HTMLResponse)
 def get_home(request: Request):
@@ -95,5 +97,22 @@ async def generate_tts(request: Request):
     try:
         murf_audio_url = generate_murf_voice(text)
         return JSONResponse({"audioUrl": murf_audio_url})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+@app.post("/llm/query")
+async def llm_query(request: Request):
+    data = await request.json()
+    text = data.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(text)
+        return JSONResponse({"response": response.text})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
