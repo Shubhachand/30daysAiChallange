@@ -104,15 +104,32 @@ async def generate_tts(request: Request):
 
 
 @app.post("/llm/query")
-async def llm_query(request: Request):
-    data = await request.json()
-    text = data.get("text")
-    if not text:
-        raise HTTPException(status_code=400, detail="Text is required")
-
+async def llm_query(file: UploadFile = File(...)):
+    temp_path = await save_temp_file(file)
     try:
+        # Step 1: Transcribe audio
+        transcription = transcribe_with_assemblyai(temp_path)
+        if not transcription.strip():
+            raise HTTPException(status_code=400, detail="No transcription found")
+
+        # Step 2: Get LLM response
         model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(text)
-        return JSONResponse({"response": response.text})
+        llm_response = model.generate_content(transcription).text.strip()
+
+        # Step 3: Ensure Murf text limit (3000 chars)
+        if len(llm_response) > 3000:
+            llm_response = llm_response[:2990] + "..."
+
+        # Step 4: Generate Murf voice from LLM response
+        murf_audio_url = generate_murf_voice(llm_response)
+
+        return JSONResponse({
+            "transcription": transcription,
+            "response": llm_response,
+            "audioUrl": murf_audio_url
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)

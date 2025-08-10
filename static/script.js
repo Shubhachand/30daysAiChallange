@@ -86,9 +86,9 @@ const handleEchoFlow = async (blob) => {
   formData.append("file", blob, "recorded-audio.webm");
 
   try {
-    const res = await fetch("/tts/echo", { method: "POST", body: formData });
-
+    const res = await fetch("/llm/query", { method: "POST", body: formData });
     if (!res.ok) throw new Error("Echo flow failed");
+
     const data = await res.json();
 
     // Play Murf-generated voice
@@ -96,7 +96,9 @@ const handleEchoFlow = async (blob) => {
 
     // Status messages
     uploadStatus.textContent = "✅ Voice ready";
-    transcriptionStatus.textContent = data.transcription
+    transcriptionStatus.textContent = data.response
+      ? `📝 ${data.response}`
+      : data.transcription
       ? `📝 ${data.transcription}`
       : "";
   } catch (err) {
