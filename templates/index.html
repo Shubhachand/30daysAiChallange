@@ -1,50 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Murf Voice Agent</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
   <div class="container">
 
+    <!-- Text → TTS -->
     <section class="tts-section">
       <h2>🎙️ Generate Speech with Murf</h2>
+
+      <label for="textInput" class="sr-only">Text for TTS</label>
       <input
         type="text"
         id="textInput"
         placeholder="Enter your text here..."
         aria-label="Text input for TTS"
+        autocomplete="off"
       />
-      <div class="tts-controls">
-        <button onclick="sendText()">Generate Audio</button>
-        <br>
-        <audio id="player" controls></audio>
-        
 
+      <div class="tts-controls">
+        <button id="generateBtn" type="button" onclick="sendText()">Generate Audio</button>
       </div>
     </section>
 
     <hr />
 
+    <!-- Echo / conversation -->
     <section class="echo-section">
       <h2>🎧 Echo Bot</h2>
+
       <div class="echo-controls">
-        <button id="startBtn" onclick="startRecording()">🎙️ Start Recording</button>
-        <button id="stopBtn" onclick="stopRecording()" disabled>⏹️ Stop Recording</button>
+        <button id="startBtn" type="button" onclick="startRecording()">🎙️ Start Recording</button>
+        <button id="stopBtn" type="button" onclick="stopRecording()" disabled>⏹️ Stop Recording</button>
       </div>
-      <canvas id="visualizer" width="500" height="100"></canvas>
+
+      <canvas id="visualizer" width="500" height="100" aria-hidden="true"></canvas>
+
       <div class="echo-playback">
-        <div id="uploadStatus" class="upload-status"></div>
-        <audio id="echoPlayer" controls></audio>
+        <div id="uploadStatus" class="upload-status" aria-live="polite"></div>
+
+        <audio id="llmPlayer" controls autoplay playsinline></audio>
       </div>
-      <div id="transcriptionStatus" class="upload-status"></div>
-      
-        <div id="uploadStatus"></div>
+
+      <div id="transcriptionStatus" class="upload-status" aria-live="polite"></div>
     </section>
 
   </div>
 
+ 
   <script src="/static/script.js"></script>
 </body>
 </html>

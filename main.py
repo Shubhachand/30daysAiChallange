@@ -133,3 +133,56 @@ async def llm_query(file: UploadFile = File(...)):
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+            
+            
+            
+# Store session histories in memory (for demo; use DB in production)
+SESSION_HISTORY = {}
+
+@app.post("/agent/chat/{session_id}")
+async def agent_chat(session_id: str, file: UploadFile = File(...)):
+    temp_path = await save_temp_file(file)
+    try:
+        # Step 1: Transcribe
+        transcription = transcribe_with_assemblyai(temp_path)
+        if not transcription.strip():
+            raise HTTPException(status_code=400, detail="No transcription found")
+
+        # Step 2: Maintain conversation history
+        history = SESSION_HISTORY.get(session_id, [])
+        history.append({"role": "user", "content": transcription})
+
+        # Optional: Keep last 10 exchanges to prevent memory bloat
+        if len(history) > 20:  # 10 user + 10 assistant
+            history = history[-20:]
+
+        # Step 3: Build prompt for LLM
+        prompt = "\n".join(
+            f"{'User' if msg['role']=='user' else 'Assistant'}: {msg['content']}"
+            for msg in history
+        )
+
+        # Step 4: Generate LLM reply with context
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        llm_response = model.generate_content(prompt).text.strip()
+
+        # Step 5: Truncate to Murf limit
+        if len(llm_response) > 3000:
+            llm_response = llm_response[:2990] + "..."
+
+        history.append({"role": "assistant", "content": llm_response})
+        SESSION_HISTORY[session_id] = history
+
+        # Step 6: Generate Murf voice
+        murf_audio_url = generate_murf_voice(llm_response)
+
+        return JSONResponse({
+            "transcription": transcription,
+            "response": llm_response,
+            "audioUrl": murf_audio_url
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
