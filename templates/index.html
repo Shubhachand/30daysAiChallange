@@ -4,18 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Voice Agent</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/styles.css?v=2" />
+
 </head>
 <body>
   <div class="container">
     <h1>🎙️ AI Voice Agent</h1>
-    <button id="recordBtn" class="record-btn">🎤 Start Talking</button>
-    <canvas id="visualizer" width="500" height="100" aria-hidden="true"></canvas>
-    <div id="status" class="status-text">Idle</div>
-    <div id="transcriptionStatus" class="transcription-text"></div>
 
-    <!-- Hidden audio player -->
+    <div class="agent-section">
+      <button id="recordBtn" class="record-btn">🎤 Start Talking</button>
+      <canvas id="visualizer" width="500" height="100" aria-hidden="true"></canvas>
+      <div id="statusText" class="status-text" aria-live="polite"></div>
+    </div>
+
     <audio id="echoPlayer" autoplay playsinline hidden></audio>
+    <button id="endSessionBtn" style="margin-top: 10px;">🛑 End Session</button>
+
   </div>
 
   <script src="/static/script.js"></script>
