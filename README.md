@@ -14,8 +14,12 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
 | ✅ 5 | Upload audio to server via endpoint          | ✅ Done |
 | ✅ 6 | Transcribe audio using AssemblyAI            | ✅ Done |
 | ✅ 7 | Echo Bot v2 – Record → Transcribe → AI Voice | ✅ Done |
-| ⏳ 8–29 | Coming soon...                            | Ongoing |
-| 🔜 30 | Final App + LinkedIn Post + Deployment 🎉    | Pending |
+| ✅ 9 | Full non-streaming AI conversation pipeline  | ✅ Done |
+| ✅ 10| Automatic continuous conversations           | ✅ Done |
+| ✅ 11| Error handling & graceful recovery           | ✅ Done |
+| ✅ 12| UI revamp & conversation flow upgrade        | ✅ Done |
+| ⏳ 13–29 | Coming soon...                           | Ongoing |
+| 🔜 30 | Final App + LinkedIn Post + Deployment 🎉   | Pending |
 
 ---
 
@@ -76,7 +80,48 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
  - Play back the AI-generated voice in the browser
  - It’s like talking to yourself… but in a perfect studio voice 🎙️
 ---
+### ✅ Day 8 – LLM Integration with Google Gemini 🤖
+- Added `/llm/query` endpoint in FastAPI backend  
+- Connected to Google’s Gemini API for intelligent, context-aware replies  
+- Successfully tested — the LLM can explain Murf AI features 📝✨  
+- Prepares the bot for natural, conversational responses  
 
+---
+
+### ✅ Day 9 – Full Non-Streaming AI Conversation Pipeline 🎯
+- Implemented **listen → think → talk back** loop:  
+  1. 🎤 Record voice in browser  
+  2. ✍️ Transcribe via AssemblyAI  
+  3. 💡 Generate smart response via Gemini API  
+  4. 🎶 Convert to natural speech using Murf AI  
+  5. 🔁 Play AI’s voice back instantly  
+- Now holds voice-only conversations without typing  
+
+---
+
+### ✅ Day 10 – Automatic Continuous Conversations 🔄
+- Bot now **listens, thinks, and responds** without extra clicks  
+- After speaking, it starts listening again  
+- Smooth, delay-free, back-and-forth interaction
+
+---
+
+### ✅ Day 11 – Error Handling & Graceful Recovery 💪
+- Handled API timeouts, connection drops, and unexpected failures  
+- Bot **recovers gracefully** without freezing  
+- Friendly fallback messages when something goes wrong
+
+---
+
+### ✅ Day 12 – UI Revamp & Conversation Flow Upgrade 🎨
+- Removed old TTS/Echo Bot UI → Now **pure Conversational Agent mode** 🎯  
+- Single smart **Start/Stop** button 🎤⏹️  
+- Added **End Session** button 🛑  
+- Clean, glowing mic button & sleeker audio visualizer  
+- Instant audio playback without bulky players  
+- Mobile-friendly redesign 📱  
+
+---
 
 
 ## 🛠 Tech Stack
@@ -89,14 +134,39 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
 
 ---
 
+## ⚙️ How to Run Locally
+
+### 1️⃣ Clone this repo
+```bash
+git clone https://github.com/your-username/ai-voice-agent.git
+cd ai-voice-agent
+2️⃣ Install dependencies
+pip install -r requirements.txt
+3️⃣ Set environment variables
+Create a .env file in the root directory:
+MURF_API_KEY=your_murf_api_key
+ASSEMBLYAI_API_KEY=your_assemblyai_api_key
+GEMINI_API_KEY=your_gemini_api_key
+4️⃣ Start FastAPI server
+uvicorn main:app --reload
+5️⃣ Open in browser
+http://127.0.0.1:8000
+
+
+
+
+
+---
+
 ## 🚀 Final Goal (Day 30)
 
 - 🎯 Build a **complete AI Voice Agent app**
 - 🧠 Features: TTS + Echo + Transcription + Real-time streaming
-- 🌐 Deploy app on Render / Vercel / Railway
+- 🌐 Deploy app on Render / Vercel
 - 📸 Post final demo on [LinkedIn](https://www.linkedin.com/in/shubhachand/)
 
 ---
+
 
 ## 📢 Stay Tuned
 
