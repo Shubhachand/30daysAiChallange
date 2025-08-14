@@ -136,21 +136,92 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
 
 ## ⚙️ How to Run Locally
 
-### 1️⃣ Clone this repo
+### 🚀 Step-by-Step Guide for Beginners
+
+#### 1️⃣ Clone the Repository
 ```bash
 git clone https://github.com/your-username/ai-voice-agent.git
 cd ai-voice-agent
-2️⃣ Install dependencies
+```
+
+#### 2️⃣ Create Virtual Environment
+**Windows:**
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+**Mac/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+> 💡 **Tip:** You'll see `(venv)` in your terminal when the virtual environment is active!
+
+#### 3️⃣ Install Dependencies
+```bash
 pip install -r requirements.txt
-3️⃣ Set environment variables
-Create a .env file in the root directory:
-MURF_API_KEY=your_murf_api_key
-ASSEMBLYAI_API_KEY=your_assemblyai_api_key
-GEMINI_API_KEY=your_gemini_api_key
-4️⃣ Start FastAPI server
+```
+
+#### 4️⃣ Set Up Environment Variables
+Create a `.env` file in the root directory:
+```bash
+# Windows
+echo. > .env
+
+# Mac/Linux
+touch .env
+```
+
+Add your API keys to the `.env` file:
+```env
+MURF_API_KEY=your_murf_api_key_here
+ASSEMBLYAI_API_KEY=your_assemblyai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+> 🔑 **Where to get API keys:**
+> - **Murf.ai**: Sign up at [murf.ai](https://murf.ai)
+> - **AssemblyAI**: Create account at [assemblyai.com](https://www.assemblyai.com)
+> - **Google Gemini**: Get key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+#### 5️⃣ Start the FastAPI Server
+```bash
 uvicorn main:app --reload
-5️⃣ Open in browser
-http://127.0.0.1:8000
+```
+
+> ✅ **Success!** You should see: `Uvicorn running on http://127.0.0.1:8000`
+
+#### 6️⃣ Open in Browser
+Navigate to: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+---
+
+### 🛠️ Troubleshooting Tips
+
+**If you get "pip not found":**
+- Windows: `python -m pip install --upgrade pip`
+- Mac/Linux: `python3 -m pip install --upgrade pip`
+
+**If port 8000 is busy:**
+```bash
+uvicorn main:app --reload --port 8001
+```
+
+**To deactivate virtual environment:**
+```bash
+deactivate
+```
+
+### 📱 Quick Start Commands (Copy & Paste)
+```bash
+# All-in-one commands for Windows
+git clone https://github.com/your-username/ai-voice-agent.git && cd ai-voice-agent && python -m venv venv && venv\Scripts\activate && pip install -r requirements.txt
+
+# All-in-one commands for Mac/Linux
+git clone https://github.com/your-username/ai-voice-agent.git && cd ai-voice-agent && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+```
 
 
 
