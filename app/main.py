@@ -1,7 +1,7 @@
 import logging
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.routes import root, tts, llm, agent
+from app.routes import root, tts, llm, agent, websocket_route 
 
 # Logging (structured enough for Cloud logs)
 logging.basicConfig(
@@ -20,3 +20,4 @@ app.include_router(root.router)
 app.include_router(tts.router)
 app.include_router(llm.router)
 app.include_router(agent.router)
+app.include_router(websocket_route.router) 
