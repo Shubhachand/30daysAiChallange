@@ -1,8 +1,10 @@
-let recordedChunks = [];
+let recordedChunks = []; // kept but no longer used
 let audioContext, analyser, dataArray, animationId;
 let isRecording = false;
 let isSessionEnded = false; // NEW FLAG
 const SESSION_ID = Math.random().toString(36).substring(2, 10);
+
+let ws; // NEW
 
 document.addEventListener("DOMContentLoaded", () => {
   const recordBtn = document.getElementById("recordBtn");
@@ -58,19 +60,37 @@ const startRecording = async () => {
     };
     draw();
 
+    // 🔹 Open WebSocket connection
+    ws = new WebSocket("ws://127.0.0.1:8000/ws/audio");
+    ws.binaryType = "arraybuffer";
+    ws.onopen = () => console.log("✅ WebSocket connected");
+    ws.onclose = () => console.log("❌ WebSocket closed");
+
     mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
+
+    // 🔹 Instead of storing chunks, stream them over WebSocket
+    mediaRecorder.ondataavailable = async (e) => {
+      if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+        const buffer = await e.data.arrayBuffer();
+        ws.send(buffer);
+      }
     };
+
     mediaRecorder.onstop = () => {
       cancelAnimationFrame(animationId);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       stream.getTracks().forEach(track => track.stop());
-      handleEchoFlow(new Blob(recordedChunks, { type: "audio/webm" }));
+
+      // 🔹 Close WS when recording stops
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
     };
 
-    mediaRecorder.start();
-    setStatus("Listening...");
+    // Stream chunks every 250ms
+    mediaRecorder.start(250);
+
+    setStatus("Listening & streaming...");
   } catch (err) {
     alert("Microphone access is required.");
     console.error(err);
@@ -88,36 +108,9 @@ const stopRecording = () => {
   }
 };
 
+// 🔹 handleEchoFlow is NOT needed anymore but I’ll leave it untouched
 const handleEchoFlow = async (blob) => {
-  try {
-    const res = await fetch(`/agent/chat/${SESSION_ID}`, {
-      method: "POST",
-      body: (() => {
-        const formData = new FormData();
-        formData.append("file", blob, "recorded-audio.webm");
-        formData.append("session_id", SESSION_ID);
-        return formData;
-      })()
-    });
-
-    if (!res.ok) throw new Error("Chat request failed");
-
-    const data = await res.json();
-    if (data.response) setStatus(`🤖 ${data.response}`);
-
-    const player = document.getElementById("echoPlayer");
-    player.src = data.audioUrl || "/static/fallback.mp3";
-    await player.play();
-
-    // Auto-restart ONLY if session not ended
-    player.onended = () => {
-      if (data.audioUrl && !isSessionEnded) startRecording();
-    };
-
-  } catch (err) {
-    console.error(err);
-    setStatus("❌ Connection issue. Try again.");
-  }
+  console.warn("⚠️ handleEchoFlow is not used in streaming mode");
 };
 
 const updateUI = () => {
