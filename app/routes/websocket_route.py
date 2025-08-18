@@ -1,42 +1,33 @@
 import os
+import assemblyai as aai
+from fastapi import FastAPI, WebSocket
 import logging
-from datetime import datetime
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-router = APIRouter()
-logger = logging.getLogger("app.websocket")
+logging.basicConfig(level=logging.INFO)
 
-UPLOAD_DIR = "static/audio"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+app = FastAPI()
 
+aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
 
-@router.websocket("/ws/audio")
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket("/ws/transcribe")
+async def transcribe_audio(websocket: WebSocket):
     await websocket.accept()
-    logger.info("🎙️ WebSocket connection established for audio streaming.")
+    logging.info("Client connected to transcription WebSocket")
 
-    session_id = websocket.query_params.get("session", "none")
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    file_path = os.path.join(
-        UPLOAD_DIR, f"streamed_audio_session_{session_id}_{timestamp}.webm"
+    transcriber = aai.RealtimeTranscriber(
+        sample_rate=16000,
+        on_data=lambda transcript: print("Transcript:", transcript.text),
+        on_error=lambda err: print("Error:", err)
     )
-    logger.info(f"📂 Saving streamed audio to: {file_path}")
+
+    transcriber.connect()
 
     try:
-        with open(file_path, "wb") as f:
-            while True:
-                try:
-                    chunk = await websocket.receive_bytes()
-                    f.write(chunk)
-                    f.flush()
-                    logger.debug(f"Received audio chunk of size: {len(chunk)} bytes")
-                except WebSocketDisconnect:
-                    logger.info("⚡ WebSocket disconnected by client.")
-                    break
-    except WebSocketDisconnect:
-        logger.info("🔌 WebSocket connection closed.")
+        while True:
+            data = await websocket.receive_bytes()
+            transcriber.send_audio(data)
     except Exception as e:
-        logger.error(f"❌ Error in WebSocket: {e}")
+        logging.error(f"WebSocket error: {e}")
     finally:
-        logger.info(f"✅ Audio stream saved at {file_path}")
+        transcriber.close()
+        await websocket.close()
