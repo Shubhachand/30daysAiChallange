@@ -1,33 +1,21 @@
-import os
-import assemblyai as aai
-from fastapi import FastAPI, WebSocket
+from fastapi import APIRouter, WebSocket
 import logging
 
 logging.basicConfig(level=logging.INFO)
+router = APIRouter()
 
-app = FastAPI()
-
-aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
-
-@app.websocket("/ws/transcribe")
-async def transcribe_audio(websocket: WebSocket):
+@router.websocket("/ws/audio")
+async def audio_handler(websocket: WebSocket):
     await websocket.accept()
-    logging.info("Client connected to transcription WebSocket")
+    logging.info("Client connected to audio WebSocket")
 
-    transcriber = aai.RealtimeTranscriber(
-        sample_rate=16000,
-        on_data=lambda transcript: print("Transcript:", transcript.text),
-        on_error=lambda err: print("Error:", err)
-    )
-
-    transcriber.connect()
-
+    audio_file_path = "received_audio.raw"  # You can use .wav if header is handled on client
     try:
-        while True:
-            data = await websocket.receive_bytes()
-            transcriber.send_audio(data)
+        with open(audio_file_path, "wb") as audio_file:
+            while True:
+                data = await websocket.receive_bytes()
+                audio_file.write(data)
     except Exception as e:
         logging.error(f"WebSocket error: {e}")
     finally:
-        transcriber.close()
         await websocket.close()

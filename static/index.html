@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Real-Time Transcription Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; }
+    h1 { color: #4a148c; }
+    #transcriptions { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 6px; background: #f9f9f9; height: 200px; overflow-y: auto; white-space: pre-wrap; }
+    button { margin-top: 10px; padding: 10px 15px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>🎤 Real-Time Streaming Transcription Test</h1>
+
+  <button id="startBtn">Start Streaming</button>
+  <button id="stopBtn" disabled>Stop Streaming</button>
+  
+  <div id="transcriptions">Waiting to start...</div>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const transcriptionsDiv = document.getElementById("transcriptions");
+
+    let audioContext;
+    let processor;
+    let input;
+    let globalStream;
+    let websocket;
+
+    // Convert Float32Array ([-1,1]) to 16-bit PCM bytes
+    function convertFloat32ToInt16(buffer) {
+      const l = buffer.length;
+      const output = new Int16Array(l);
+      for (let i = 0; i < l; i++) {
+        let s = Math.max(-1, Math.min(1, buffer[i]));
+        output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return output.buffer;
+    }
+
+    async function startStreaming() {
+      transcriptionsDiv.textContent = "Starting...";
+
+      websocket = new WebSocket("ws://localhost:8000/ws/transcribe");
+      websocket.binaryType = "arraybuffer";
+
+      websocket.onopen = () => {
+        transcriptionsDiv.textContent = "WebSocket connected. Streaming audio...";
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+      };
+
+      websocket.onerror = event => {
+        transcriptionsDiv.textContent = "WebSocket error.";
+        console.error(event);
+      };
+
+      websocket.onclose = () => {
+        transcriptionsDiv.textContent += "\nWebSocket connection closed.";
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      };
+
+      // Optional: receive transcripts back from server websocket messages (if implemented)
+      websocket.onmessage = (event) => {
+        transcriptionsDiv.textContent += `\n${event.data}`;
+        transcriptionsDiv.scrollTop = transcriptionsDiv.scrollHeight;
+      };
+
+      audioContext = new (window.AudioContext || window.webkitAudioContext)({sampleRate: 16000});
+      globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      input = audioContext.createMediaStreamSource(globalStream);
+
+      processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processor.onaudioprocess = (e) => {
+        const floatData = e.inputBuffer.getChannelData(0);
+        const int16Data = convertFloat32ToInt16(floatData);
+        if (websocket.readyState === WebSocket.OPEN) {
+          websocket.send(int16Data);
+        }
+      };
+
+      input.connect(processor);
+      processor.connect(audioContext.destination);
+
+      transcriptionsDiv.textContent = "Audio streaming started...";
+    }
+
+    function stopStreaming() {
+      if (processor) {
+        processor.disconnect();
+        processor.onaudioprocess = null;
+      }
+      if (input) input.disconnect();
+      if (globalStream) {
+        globalStream.getTracks().forEach(track => track.stop());
+      }
+      if (audioContext) audioContext.close();
+
+      if (websocket) websocket.close();
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+
+      transcriptionsDiv.textContent += "\nStreaming stopped.";
+    }
+
+    startBtn.addEventListener("click", startStreaming);
+    stopBtn.addEventListener("click", stopStreaming);
+  </script>
+</body>
+</html>
