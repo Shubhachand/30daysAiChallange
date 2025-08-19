@@ -1,129 +1,136 @@
-let recordedChunks = []; // kept but no longer used
-let audioContext, analyser, dataArray, animationId;
+const micBtn = document.getElementById("micBtn");
+const statusDiv = document.getElementById("status");
+const finalTranscriptDiv = document.getElementById("finalTranscript");
+
+let ws;
+let audioContext, recorderNode, source, stream;
 let isRecording = false;
-let isSessionEnded = false; // NEW FLAG
-const SESSION_ID = Math.random().toString(36).substring(2, 10);
 
-let ws; // NEW
-
-document.addEventListener("DOMContentLoaded", () => {
-  const recordBtn = document.getElementById("recordBtn");
-  const endSessionBtn = document.getElementById("endSessionBtn"); // NEW BUTTON
-
-  recordBtn.addEventListener("click", () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      isSessionEnded = false; // reset if starting again
-      startRecording();
-    }
-  });
-
-  // End session button handler
-  endSessionBtn.addEventListener("click", () => {
-    isSessionEnded = true;
-    setStatus("🛑 Session ended.");
-  });
+micBtn.addEventListener("click", () => {
+  if (isRecording) stopRecording();
+  else startRecording();
 });
 
-const startRecording = async () => {
-  recordedChunks = [];
-  isRecording = true;
-  updateUI();
+async function startRecording() {
+  ws = new WebSocket("ws://localhost:8000/ws/transcribe");
+  ws.binaryType = "arraybuffer";
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  ws.onopen = () => {
+    statusDiv.textContent = "🎧 Connected & streaming audio...";
+    isRecording = true;
+    micBtn.classList.add("recording");
+    micBtn.setAttribute("aria-label", "Stop recording");
+  };
 
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioContext.createMediaStreamSource(stream);
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;
-    dataArray = new Uint8Array(analyser.frequencyBinCount);
-    source.connect(analyser);
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    console.log("Received WS message:", msg);
+    if (msg.type === "turn_end") {
+      finalTranscriptDiv.innerText +=
+        (finalTranscriptDiv.innerText ? "\n" : "") + msg.text;
+      statusDiv.textContent = "⏸️ Turn ended, you can continue speaking...";
+      console.log("Final Transcript:", msg.text);
+    } else if (msg.type === "session_end") {
+      statusDiv.textContent = "✅ Session ended.";
+      stopRecording();
+    } else if (msg.type === "session_start") {
+      statusDiv.textContent = "🟢 Session started.";
+    }
+  };
 
-    const canvas = document.getElementById("visualizer");
-    const ctx = canvas.getContext("2d");
-
-    const draw = () => {
-      animationId = requestAnimationFrame(draw);
-      analyser.getByteFrequencyData(dataArray);
-      ctx.fillStyle = "#1c1c1c";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const barWidth = (canvas.width / dataArray.length) * 1.5;
-      let x = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const barHeight = dataArray[i];
-        ctx.fillStyle = "#00ffd5";
-        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-        x += barWidth + 1;
-      }
-    };
-    draw();
-
-    // 🔹 Open WebSocket connection
-    ws = new WebSocket("ws://127.0.0.1:8000/ws/audio");
-    ws.binaryType = "arraybuffer";
-    ws.onopen = () => console.log("✅ WebSocket connected");
-    ws.onclose = () => console.log("❌ WebSocket closed");
-
-    mediaRecorder = new MediaRecorder(stream);
-
-    // 🔹 Instead of storing chunks, stream them over WebSocket
-    mediaRecorder.ondataavailable = async (e) => {
-      if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-        const buffer = await e.data.arrayBuffer();
-        ws.send(buffer);
-      }
-    };
-
-    mediaRecorder.onstop = () => {
-      cancelAnimationFrame(animationId);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      stream.getTracks().forEach(track => track.stop());
-
-      // 🔹 Close WS when recording stops
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-
-    // Stream chunks every 250ms
-    mediaRecorder.start(250);
-
-    setStatus("Listening & streaming...");
-  } catch (err) {
-    alert("Microphone access is required.");
-    console.error(err);
+  ws.onclose = () => {
+    statusDiv.textContent = "🛑 Disconnected";
     isRecording = false;
-    updateUI();
+    micBtn.classList.remove("recording");
+    micBtn.setAttribute("aria-label", "Start recording");
+  };
+  ws.onerror = () => {
+    statusDiv.textContent = "⚠ Connection error";
+  };
+
+  audioContext = new AudioContext({ sampleRate: 16000 });
+  stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  source = audioContext.createMediaStreamSource(stream);
+
+  await audioContext.audioWorklet.addModule(
+    URL.createObjectURL(
+      new Blob(
+        [
+          `
+    class RecorderProcessor extends AudioWorkletProcessor {
+      process(inputs) {
+        const input = inputs[0];
+        if (input.length > 0) this.port.postMessage(input);
+        return true;
+      }
+    }
+    registerProcessor('recorder-processor', RecorderProcessor);
+  `,
+        ],
+        { type: "application/javascript" }
+      )
+    )
+  );
+
+  let audioBuffer = [];
+  recorderNode = new AudioWorkletNode(audioContext, "recorder-processor");
+  recorderNode.port.onmessage = (e) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      // e.data is [Float32Array, ...] (one per channel)
+      const channelData = e.data[0]; // mono
+      if (channelData && channelData.length > 0) {
+        // Accumulate samples
+        audioBuffer.push(...channelData);
+
+        // 800 samples = 50ms at 16kHz
+        while (audioBuffer.length >= 800) {
+          const chunk = audioBuffer.slice(0, 800);
+          ws.send(convertFloat32ToInt16(new Float32Array(chunk)));
+          audioBuffer = audioBuffer.slice(800);
+        }
+      }
+    }
+  };
+
+  source.connect(recorderNode);
+  recorderNode.connect(audioContext.destination);
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+
+  isRecording = false;
+  micBtn.classList.remove("recording");
+  micBtn.setAttribute("aria-label", "Start recording");
+  statusDiv.textContent = "🛑 Stopped listening.";
+
+  if (recorderNode) {
+    recorderNode.disconnect();
+    recorderNode = null;
   }
-};
-
-const stopRecording = () => {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
-    isRecording = false;
-    updateUI();
-    setStatus("Processing...");
+  if (source) {
+    source.disconnect();
+    source = null;
   }
-};
-
-// 🔹 handleEchoFlow is NOT needed anymore but I’ll leave it untouched
-const handleEchoFlow = async (blob) => {
-  console.warn("⚠️ handleEchoFlow is not used in streaming mode");
-};
-
-const updateUI = () => {
-  const btn = document.getElementById("recordBtn");
-  if (isRecording) {
-    btn.textContent = "⏹️ Stop Talking";
-    btn.classList.add("recording");
-  } else {
-    btn.textContent = "🎤 Start Talking";
-    btn.classList.remove("recording");
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
   }
-};
+  if (stream) {
+    stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+  }
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.close();
+  }
+}
 
-const setStatus = (msg) => {
-  document.getElementById("statusText").textContent = msg;
-};
+function convertFloat32ToInt16(buffer) {
+  const l = buffer.length;
+  const buf = new Int16Array(l);
+  for (let i = 0; i < l; i++) {
+    let s = Math.max(-1, Math.min(1, buffer[i]));
+    buf[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  return buf.buffer;
+}

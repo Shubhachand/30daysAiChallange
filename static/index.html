@@ -1,116 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Real-Time Transcription Test</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 30px; }
-    h1 { color: #4a148c; }
-    #transcriptions { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 6px; background: #f9f9f9; height: 200px; overflow-y: auto; white-space: pre-wrap; }
-    button { margin-top: 10px; padding: 10px 15px; font-size: 16px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+      margin: 0;
+      min-height: 100vh;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #5b21b6;
+      margin-top: 40px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-align: center;
+      text-shadow: 0 2px 8px rgba(91, 33, 182, 0.08);
+    }
+
+    #bot-container {
+      background: #fff;
+      box-shadow: 0 8px 32px rgba(91, 33, 182, 0.10), 0 1.5px 6px rgba(0, 0, 0, 0.04);
+      border-radius: 22px;
+      padding: 36px 32px 28px 32px;
+      margin-top: 32px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      border: 1.5px solid #ede9fe;
+    }
+
+    #transcriptions {
+      margin-top: 18px;
+      padding: 0 0 0 0;
+      border-radius: 12px;
+      background: #f3f4f6;
+      min-height: 120px;
+      max-height: 260px;
+      overflow-y: auto;
+      font-size: 1.08rem;
+      color: #22223b;
+      box-shadow: 0 1px 3px rgba(91, 33, 182, 0.04);
+      white-space: pre-wrap;
+      transition: background 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-bubble {
+      align-self: flex-start;
+      background: linear-gradient(90deg, #ede9fe 0%, #e0e7ff 100%);
+      color: #3b0764;
+      padding: 12px 18px;
+      border-radius: 16px 16px 16px 4px;
+      margin: 8px 18px 0 8px;
+      font-size: 1.08rem;
+      box-shadow: 0 1px 4px rgba(91, 33, 182, 0.06);
+      max-width: 90%;
+      word-break: break-word;
+      animation: fadeIn 0.5s;
+    }
+
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%);
+      color: #fff;
+      border-radius: 16px 16px 4px 16px;
+      margin: 8px 8px 0 18px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+      margin-bottom: 6px;
+    }
+
+    button {
+      flex: 1 1 0;
+      padding: 12px 0;
+      font-size: 1.08rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(91, 33, 182, 0.08);
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    button:disabled {
+      background: #c7d2fe;
+      color: #a1a1aa;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    button:not(:disabled):hover {
+      background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 100%);
+      box-shadow: 0 4px 16px rgba(91, 33, 182, 0.12);
+    }
   </style>
 </head>
+
 <body>
+
   <h1>🎤 Real-Time Streaming Transcription Test</h1>
+  <div id="bot-container">
+    <div class="button-row">
+      <button id="startBtn">Start Streaming</button>
+      <button id="stopBtn" disabled>Stop Streaming</button>
+    </div>
+    <div id="transcriptions">
+      <div class="chat-bubble">Waiting to start...</div>
+    </div>
+  </div>
 
-  <button id="startBtn">Start Streaming</button>
-  <button id="stopBtn" disabled>Stop Streaming</button>
-  
-  <div id="transcriptions">Waiting to start...</div>
-
-  <script>
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
-    const transcriptionsDiv = document.getElementById("transcriptions");
-
-    let audioContext;
-    let processor;
-    let input;
-    let globalStream;
-    let websocket;
-
-    // Convert Float32Array ([-1,1]) to 16-bit PCM bytes
-    function convertFloat32ToInt16(buffer) {
-      const l = buffer.length;
-      const output = new Int16Array(l);
-      for (let i = 0; i < l; i++) {
-        let s = Math.max(-1, Math.min(1, buffer[i]));
-        output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-      }
-      return output.buffer;
-    }
-
-    async function startStreaming() {
-      transcriptionsDiv.textContent = "Starting...";
-
-      websocket = new WebSocket("ws://localhost:8000/ws/transcribe");
-      websocket.binaryType = "arraybuffer";
-
-      websocket.onopen = () => {
-        transcriptionsDiv.textContent = "WebSocket connected. Streaming audio...";
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-      };
-
-      websocket.onerror = event => {
-        transcriptionsDiv.textContent = "WebSocket error.";
-        console.error(event);
-      };
-
-      websocket.onclose = () => {
-        transcriptionsDiv.textContent += "\nWebSocket connection closed.";
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-      };
-
-      // Optional: receive transcripts back from server websocket messages (if implemented)
-      websocket.onmessage = (event) => {
-        transcriptionsDiv.textContent += `\n${event.data}`;
-        transcriptionsDiv.scrollTop = transcriptionsDiv.scrollHeight;
-      };
-
-      audioContext = new (window.AudioContext || window.webkitAudioContext)({sampleRate: 16000});
-      globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      input = audioContext.createMediaStreamSource(globalStream);
-
-      processor = audioContext.createScriptProcessor(4096, 1, 1);
-      processor.onaudioprocess = (e) => {
-        const floatData = e.inputBuffer.getChannelData(0);
-        const int16Data = convertFloat32ToInt16(floatData);
-        if (websocket.readyState === WebSocket.OPEN) {
-          websocket.send(int16Data);
-        }
-      };
-
-      input.connect(processor);
-      processor.connect(audioContext.destination);
-
-      transcriptionsDiv.textContent = "Audio streaming started...";
-    }
-
-    function stopStreaming() {
-      if (processor) {
-        processor.disconnect();
-        processor.onaudioprocess = null;
-      }
-      if (input) input.disconnect();
-      if (globalStream) {
-        globalStream.getTracks().forEach(track => track.stop());
-      }
-      if (audioContext) audioContext.close();
-
-      if (websocket) websocket.close();
-
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-
-      transcriptionsDiv.textContent += "\nStreaming stopped.";
-    }
-
-    startBtn.addEventListener("click", startStreaming);
-    stopBtn.addEventListener("click", stopStreaming);
-  </script>
+  <script src="static/script.js"></script>
 </body>
+
 </html>

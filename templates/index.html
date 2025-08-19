@@ -1,27 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI Voice Agent</title>
-  <link rel="stylesheet" href="/static/styles.css?v=2" />
-
-</head>
-<body>
-  <div class="container">
-    <h1>🎙️ AI Voice Agent</h1>
-
-    <div class="agent-section">
-      <button id="recordBtn" class="record-btn">🎤 Start Talking</button>
-      <canvas id="visualizer" width="500" height="100" aria-hidden="true"></canvas>
-      <div id="statusText" class="status-text" aria-live="polite"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Voxora - AI Voice Assistant</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap");
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+        margin: 0;
+        min-height: 100vh;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-x: hidden;
+      }
+      #app {
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 12px 48px 0 rgba(44, 83, 100, 0.25),
+          0 1.5px 6px rgba(0, 0, 0, 0.04);
+        border-radius: 32px;
+        padding: 48px 36px 36px 36px;
+        margin-top: 64px;
+        width: 100%;
+        max-width: 520px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        border: 2.5px solid #7f53ac;
+        position: relative;
+        animation: fadeInApp 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        backdrop-filter: blur(8px);
+      }
+      @keyframes fadeInApp {
+        from {
+          opacity: 0;
+          transform: translateY(40px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      h1 {
+        font-family: "Orbitron", "Inter", Arial, sans-serif;
+        color: #fff;
+        margin-bottom: 32px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-align: center;
+        text-shadow: 0 4px 24px #7f53ac, 0 2px 8px #232526;
+        font-size: 2.2rem;
+        animation: neonPulse 2.5s infinite alternate;
+      }
+      @keyframes neonPulse {
+        from {
+          text-shadow: 0 4px 24px #7f53ac, 0 2px 8px #232526;
+        }
+        to {
+          text-shadow: 0 8px 32px #40e0d0, 0 2px 8px #232526;
+        }
+      }
+      #micBtn {
+        font-size: 2.6rem;
+        background: linear-gradient(135deg, #40e0d0 0%, #7f53ac 100%);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 24px auto;
+        box-shadow: 0 4px 24px #7f53ac, 0 2px 8px #232526;
+        cursor: pointer;
+        transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: micGlow 2s infinite alternate;
+      }
+      @keyframes micGlow {
+        from {
+          box-shadow: 0 4px 24px #7f53ac, 0 2px 8px #232526;
+        }
+        to {
+          box-shadow: 0 8px 48px #40e0d0, 0 2px 8px #232526;
+        }
+      }
+      #micBtn.recording {
+        background: linear-gradient(135deg, #7f53ac 0%, #40e0d0 100%);
+        box-shadow: 0 8px 48px #40e0d0, 0 2px 8px #232526;
+        transform: scale(1.12) rotate(-8deg);
+        animation: micGlowActive 1s infinite alternate;
+      }
+      @keyframes micGlowActive {
+        from {
+          box-shadow: 0 8px 48px #40e0d0, 0 2px 8px #232526;
+        }
+        to {
+          box-shadow: 0 16px 64px #7f53ac, 0 2px 8px #232526;
+        }
+      }
+      #status {
+        text-align: center;
+        margin-bottom: 22px;
+        color: #40e0d0;
+        font-size: 1.18rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        animation: fadeInStatus 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      }
+      @keyframes fadeInStatus {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .label {
+        font-size: 1.08rem;
+        color: #40e0d0;
+        margin-bottom: 8px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 4px #7f53ac;
+        animation: fadeInLabel 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      }
+      @keyframes fadeInLabel {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      .box {
+        min-height: 60px;
+        background: linear-gradient(90deg, #232526 0%, #414345 100%);
+        border-radius: 16px;
+        padding: 18px 20px;
+        color: #fff;
+        font-size: 1.12rem;
+        box-shadow: 0 2px 8px #7f53ac33;
+        white-space: pre-wrap;
+        margin-bottom: 14px;
+        animation: fadeInBox 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        border: 1.5px solid #40e0d0;
+      }
+      @keyframes fadeInBox {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Echo</h1>
+      <button id="micBtn" aria-label="Start recording">🎤</button>
+      <div id="status">Not Recording</div>
+      <div>
+        <div class="label">Final Transcript</div>
+        <div id="finalTranscript" class="box"></div>
+      </div>
     </div>
-
-    <audio id="echoPlayer" autoplay playsinline hidden></audio>
-    <button id="endSessionBtn" style="margin-top: 10px;">🛑 End Session</button>
-
-  </div>
-
-  <script src="/static/script.js"></script>
-</body>
+    <script src="/static/script.js"></script>
+  </body>
 </html>

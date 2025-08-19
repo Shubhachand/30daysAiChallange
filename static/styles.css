@@ -1,109 +1,82 @@
 body {
-  margin: 0;
-  background: linear-gradient(135deg, #121212, #1a1a1a);
-  color: #e0f7f7;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f0f0;
+  font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
 
-.container {
-  text-align: center;
-  max-width: 600px;
-  width: 90%;
+#app {
+  background: #6200ea;
   padding: 20px;
-  backdrop-filter: blur(10px);
-  background: rgba(20, 20, 20, 0.75);
   border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 255, 213, 0.6);
+  width: 320px;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  user-select: none;
 }
 
 h1 {
-  color: #00ffd5;
-  margin-bottom: 1rem;
-  font-weight: 700;
-  text-shadow: 0 0 8px #00ffd5;
+  margin-top: 0;
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  text-align: center;
 }
 
-.record-btn, #endSessionBtn {
+button#micBtn {
+  background: #7e57c2;
   border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  width: 95px;
-  height: 95px;
-  font-size: 1.8rem;
-  color: white;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 10px #0078ff;
-  margin: 0 10px;
-}
-
-.record-btn {
-  background: linear-gradient(145deg, #0078ff, #0051a3);
-}
-
-.record-btn.recording {
-  background: linear-gradient(145deg, #ff4040, #a30000);
-  animation: pulse 1.5s infinite;
-  box-shadow: 0 0 20px 6px rgba(255, 64, 64, 0.7);
-}
-
-.record-btn:hover:not(.recording) {
-  transform: scale(1.1);
-  box-shadow: 0 0 18px #00bfff;
-}
-
-#endSessionBtn {
-  background: linear-gradient(145deg, #ff3b3b, #a32121);
-  position: relative;
-  top: 15px;
   border-radius: 50%;
   width: 60px;
   height: 60px;
-  font-size: 1.3rem;
-  box-shadow: 0 0 10px red;
+  cursor: pointer;
+  font-size: 2rem;
+  color: white;
+  margin: 10px auto;
+  display: block;
+  transition: background 0.3s ease;
+  user-select: none;
 }
 
-#endSessionBtn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 20px red;
-}
-
-#visualizer {
-  margin-top: 25px;
-  width: 100%;
-  max-width: 600px;
-  height: 110px;
-  border-radius: 12px;
-  background: #151515;
-  box-shadow: 0 0 15px #00ffd5;
-}
-
-.status-text {
-  margin-top: 20px;
-  font-size: 1.2rem;
-  color: #cce7e7;
-  min-height: 1.5em;
-  transition: opacity 0.4s ease;
+button#micBtn.recording {
+  background: #d32f2f;
+  animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 64, 64, 0.6); }
-  70% { box-shadow: 0 0 0 15px rgba(255, 64, 64, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 64, 64, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(211, 47, 47, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+  }
 }
 
-@media (max-width: 600px) {
-  .record-btn, #endSessionBtn {
-    width: 70px;
-    height: 70px;
-    font-size: 1.3rem;
-    margin: 5px;
-  }
+#status {
+  font-size: 0.9rem;
+  min-height: 1.2em;
+  margin-bottom: 15px;
+  text-align: center;
+  font-style: italic;
+}
 
-  #visualizer {
-    height: 90px;
-  }
+.box {
+  background: white;
+  color: #6200ea;
+  padding: 10px 8px;
+  border-radius: 6px;
+  min-height: 40px;
+  margin-bottom: 10px;
+  overflow-wrap: break-word;
+  font-size: 0.95rem;
+}
+
+.label {
+  font-weight: 700;
+  margin-bottom: 4px;
+  user-select: none;
 }
