@@ -9,7 +9,7 @@ load_dotenv()
 API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 
 router = APIRouter()
-
+session_active = True
 @router.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):
     await websocket.accept()
@@ -26,7 +26,7 @@ async def websocket_transcribe(websocket: WebSocket):
                     while True:
                         # Receive binary audio chunk from client
                         audio_chunk = await websocket.receive_bytes()
-                        print(f"Received audio chunk size: {len(audio_chunk)} bytes")
+                        
                         await assemblyai_ws.send(audio_chunk)
                 except WebSocketDisconnect:
                     print("Client disconnected")
@@ -60,7 +60,17 @@ async def websocket_transcribe(websocket: WebSocket):
                                     "type": "turn_end",
                                     "text": transcript
                                 }))
-                                # Close server websocket connection (auto stop)
+                                # --- LLM Streaming Integration ---
+                                import httpx
+                                llm_url = "http://localhost:8000/llm/query_stream"  # You may need to create this endpoint or use your LLM's streaming endpoint
+                                async with httpx.AsyncClient(timeout=None) as client:
+                                    async with client.stream("POST", llm_url, json={"prompt": transcript}) as resp:
+                                        llm_response = ""
+                                        async for chunk in resp.aiter_text():
+                                            llm_response += chunk
+                                            print(chunk, end="", flush=True)
+                                        print("\n[LLM stream complete]")
+                                # --- End LLM Streaming Integration ---
                                 await websocket.close()
                                 break
 

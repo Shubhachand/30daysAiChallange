@@ -2,9 +2,11 @@ const micBtn = document.getElementById("micBtn");
 const statusDiv = document.getElementById("status");
 const finalTranscriptDiv = document.getElementById("finalTranscript");
 
-let ws;
+let ws; 
 let audioContext, recorderNode, source, stream;
 let isRecording = false;
+
+
 
 micBtn.addEventListener("click", () => {
   if (isRecording) stopRecording();
