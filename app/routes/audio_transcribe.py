@@ -1,3 +1,6 @@
+from app.services.stream_gemini_to_murf import stream_gemini_to_murf
+from app.services.llm_gemini import llm
+from app.config import settings
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import os
 import json
@@ -12,6 +15,7 @@ router = APIRouter()
 
 @router.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):
+
     await websocket.accept()
     print("Client connected to /ws/transcribe")
 
@@ -60,17 +64,12 @@ async def websocket_transcribe(websocket: WebSocket):
                                     "type": "turn_end",
                                     "text": transcript
                                 }))
-                                # --- LLM Streaming Integration ---
-                                import httpx
-                                llm_url = "http://localhost:8000/llm/query_stream"  # You may need to create this endpoint or use your LLM's streaming endpoint
-                                async with httpx.AsyncClient(timeout=None) as client:
-                                    async with client.stream("POST", llm_url, json={"prompt": transcript}) as resp:
-                                        llm_response = ""
-                                        async for chunk in resp.aiter_text():
-                                            llm_response += chunk
-                                            print(chunk, end="", flush=True)
-                                        print("\n[LLM stream complete]")
-                                # --- End LLM Streaming Integration ---
+                                # Process transcript through LLM first, then stream to Murf
+                                llm_response = llm.generate(transcript) or settings.FALLBACK_TEXT
+                                print(f"LLM Response: {llm_response}")
+                                
+                                # Stream LLM output to Murf and print base64 audio
+                                await stream_gemini_to_murf(llm_response)
                                 await websocket.close()
                                 break
 
