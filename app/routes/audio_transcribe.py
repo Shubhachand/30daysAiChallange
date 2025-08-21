@@ -9,7 +9,7 @@ load_dotenv()
 API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 
 router = APIRouter()
-session_active = True
+
 @router.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):
     await websocket.accept()
