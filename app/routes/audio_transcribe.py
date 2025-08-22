@@ -6,6 +6,7 @@ import os
 import json
 import websockets
 import asyncio
+import base64
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,9 +28,15 @@ async def websocket_transcribe(websocket: WebSocket):
 
             async def forward_audio():
                 try:
+                    audio_chunks = []  # Array to accumulate base64 chunks on server
                     while True:
                         # Receive binary audio chunk from client
                         audio_chunk = await websocket.receive_bytes()
+                        
+                        # Convert to base64 and accumulate
+                        base64_chunk = base64.b64encode(audio_chunk).decode('utf-8')
+                        audio_chunks.append(base64_chunk)
+                        print(f"Server Acknowledgement: Audio data received, base64 length: {len(base64_chunk)}")
                         
                         await assemblyai_ws.send(audio_chunk)
                 except WebSocketDisconnect:
@@ -68,8 +75,8 @@ async def websocket_transcribe(websocket: WebSocket):
                                 llm_response = llm.generate(transcript) or settings.FALLBACK_TEXT
                                 print(f"LLM Response: {llm_response}")
                                 
-                                # Stream LLM output to Murf and print base64 audio
-                                await stream_gemini_to_murf(llm_response)
+                                # Stream LLM output to Murf and stream base64 audio chunks to client
+                                await stream_gemini_to_murf(llm_response, websocket)
                                 await websocket.close()
                                 break
 

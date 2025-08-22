@@ -16,7 +16,7 @@ MURF_WS_URL = (
 )
 
 
-async def stream_gemini_to_murf(text: str, output_path: str = None) -> str:
+async def stream_gemini_to_murf(text: str, websocket=None, output_path: str = None) -> str:
     """
     Streams text to Murf AI via WebSocket and saves synthesized audio as MP3.
     Returns the absolute path to the audio file.
@@ -84,9 +84,12 @@ async def stream_gemini_to_murf(text: str, output_path: str = None) -> str:
                     continue
 
                 if "audio" in msg:
-                    chunk = base64.b64decode(msg["audio"])
-                    audio_bytes.extend(chunk)
-                    print(f"[MURF] 🔊 Received chunk ({len(chunk)} bytes)")
+                    base64_chunk = msg["audio"]
+                    audio_bytes.extend(base64.b64decode(base64_chunk))
+                    # Stream base64 chunk to client
+                    if websocket:
+                        await websocket.send_text(json.dumps({"type": "audio_chunk", "data": base64_chunk}))
+                        print("[SERVER] Sent audio chunk to client")
                 if msg.get("final"):
                     print("[MURF] ✅ Synthesis complete")
                     break

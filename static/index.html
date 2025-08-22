@@ -134,12 +134,15 @@
   <h1>🎤 Real-Time Streaming Transcription Test</h1>
   <div id="bot-container">
     <div class="button-row">
-      <button id="startBtn">Start Streaming</button>
-      <button id="stopBtn" disabled>Stop Streaming</button>
+      <button id="micBtn">Start Recording</button>
+      <button id="stopBtn" disabled>Stop Recording</button>
     </div>
     <div id="transcriptions">
       <div class="chat-bubble">Waiting to start...</div>
     </div>
+    <div id="status" style="margin-top: 10px; color: #666; font-size: 14px;"></div>
+    <div id="finalTranscript" style="margin-top: 10px; display: none;"></div>
+    <audio id="audioPlayer" controls style="margin-top: 10px; width: 100%;"></audio>
   </div>
 
   <script src="static/script.js"></script>

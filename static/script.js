@@ -5,6 +5,7 @@ const finalTranscriptDiv = document.getElementById("finalTranscript");
 let ws; 
 let audioContext, recorderNode, source, stream;
 let isRecording = false;
+let audioChunks = []; // Array to accumulate base64 audio chunks
 
 
 
@@ -22,6 +23,7 @@ async function startRecording() {
     isRecording = true;
     micBtn.classList.add("recording");
     micBtn.setAttribute("aria-label", "Stop recording");
+    audioChunks = []; // Reset audio chunks array for new session
   };
 
   ws.onmessage = (event) => {
@@ -37,6 +39,11 @@ async function startRecording() {
       stopRecording();
     } else if (msg.type === "session_start") {
       statusDiv.textContent = "🟢 Session started.";
+    } else if (msg.type === "audio_chunk") {
+      // Handle incoming base64 audio chunks
+      console.log("Acknowledgement: Audio chunk received, base64 data length:", msg.data.length);
+      // Accumulate the chunks in an array
+      audioChunks.push(msg.data);
     }
   };
 
