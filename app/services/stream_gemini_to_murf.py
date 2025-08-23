@@ -46,8 +46,8 @@ async def stream_gemini_to_murf(text: str, websocket=None, output_path: str = No
             # 1. Send voice config
             voice_cfg = {
                 "voice_config": {
-                    "voiceId": "en-US-amara",
-                    "style": "Conversational",
+                    "voiceId": "en-US-natalie",
+                    "style": "Neutral",
                     "rate": 0,
                     "pitch": 0,
                     "variation": 1,
@@ -88,7 +88,7 @@ async def stream_gemini_to_murf(text: str, websocket=None, output_path: str = No
                     audio_bytes.extend(base64.b64decode(base64_chunk))
                     # Stream base64 chunk to client
                     if websocket:
-                        await websocket.send_text(json.dumps({"type": "audio_chunk", "data": base64_chunk}))
+                        await websocket.send_text(json.dumps({"type": "audio_chunk", "data": base64_chunk, "final": msg.get("final")}))
                         print("[SERVER] Sent audio chunk to client")
                 if msg.get("final"):
                     print("[MURF] ✅ Synthesis complete")
