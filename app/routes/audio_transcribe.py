@@ -1,5 +1,6 @@
 from app.services.stream_gemini_to_murf import stream_gemini_to_murf
 from app.services.llm_gemini import llm
+from app.services.storage import store
 from app.config import settings
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import os
@@ -14,6 +15,24 @@ API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 
 router = APIRouter()
 
+
+def build_prompt_from_history(history, max_turns=3):
+    # Persona and instructions for Echo
+    system = (
+        "You are Echo, a helpful, friendly, and witty AI assistant made by Shubhachand Patel. "
+        "You remember the conversation history and can handle all typical conversational AI commands (e.g., tell a joke, set a reminder, answer questions, summarize, translate, etc). "
+        "Always respond as Echo, and keep your answers concise, clear, and engaging."
+    )
+    prompt = system + "\n"
+    # Only use the last max_turns*2 messages (user+assistant pairs)
+    if len(history) > max_turns * 2:
+        history = history[-max_turns*2:]
+    for msg in history:
+        role = "User" if msg["role"] == "user" else "Echo"
+        prompt += f"{role}: {msg['content']}\n"
+    prompt += "Echo:"
+    return prompt
+
 @router.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):
 
@@ -23,6 +42,8 @@ async def websocket_transcribe(websocket: WebSocket):
     url = "wss://streaming.assemblyai.com/v3/ws?sample_rate=16000"
     headers = {"Authorization": API_KEY}
 
+    # Use websocket id as session_id
+    session_id = str(id(websocket))
     try:
         async with websockets.connect(url, extra_headers=headers) as assemblyai_ws:
 
@@ -65,20 +86,28 @@ async def websocket_transcribe(websocket: WebSocket):
                                 "end_of_turn": end_of_turn
                             }))
 
-                            # If turn ended, send final turn and optionally stop
+                            # If turn ended, update history, build prompt, and process LLM/Murf
                             if end_of_turn:
                                 await websocket.send_text(json.dumps({
                                     "type": "turn_end",
                                     "text": transcript
                                 }))
-                                # Process transcript through LLM first, then stream to Murf
-                                llm_response = llm.generate(transcript) or settings.FALLBACK_TEXT
-                                print(f"LLM Response: {llm_response}")
-                                
-                                # Stream LLM output to Murf and stream base64 audio chunks to client
+                                # Store user message
+                                store.append(session_id, "user", transcript)
+                                # Build prompt from history (history already includes latest user message)
+                                history = store.history(session_id)
+                                prompt = build_prompt_from_history(history)
+                                # Generate LLM response (full, for chat bubble)
+                                llm_response = llm.generate(prompt) or settings.FALLBACK_TEXT
+                                # Store assistant message
+                                store.append(session_id, "assistant", llm_response)
+                                await websocket.send_text(json.dumps({
+                                    "type": "ai_text",
+                                    "text": llm_response
+                                }))
+                                # Stream the stored LLM response to Murf for TTS (no repeated LLM call)
                                 await stream_gemini_to_murf(llm_response, websocket)
-                                await websocket.close()
-                                break
+                                # Do NOT close websocket here; allow for multi-turn conversation
 
                         elif msg_type == "session_begin":
                             await websocket.send_text(json.dumps({

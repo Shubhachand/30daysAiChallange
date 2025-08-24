@@ -1,13 +1,31 @@
 const micBtn = document.getElementById("micBtn");
 const statusDiv = document.getElementById("status");
-const finalTranscriptDiv = document.getElementById("finalTranscript");
 
-let ws; 
+const finalTranscriptDiv = document.getElementById("finalTranscript");
+const transcriptionsDiv = document.getElementById("transcriptions");
+
+// Helper to add a chat bubble
+function addChatBubble(text, isUser = false, bubbleId = null) {
+  const bubble = document.createElement("div");
+  bubble.className = "chat-bubble" + (isUser ? " user" : "");
+  bubble.textContent = text;
+  if (bubbleId) bubble.dataset.bubbleId = bubbleId;
+  transcriptionsDiv.appendChild(bubble);
+  transcriptionsDiv.scrollTop = transcriptionsDiv.scrollHeight;
+  return bubble;
+}
+
+function removeBubbleById(bubbleId) {
+  const bubble = transcriptionsDiv.querySelector(
+    `[data-bubble-id='${bubbleId}']`
+  );
+  if (bubble) bubble.remove();
+}
+
+let ws;
 let audioContext, recorderNode, source, stream;
 let isRecording = false;
 let audioChunks = []; // Array to accumulate base64 audio chunks
-
-
 
 micBtn.addEventListener("click", () => {
   if (isRecording) stopRecording();
@@ -32,6 +50,10 @@ async function startRecording() {
       const msg = JSON.parse(event.data);
       console.log("Received WS message:", msg);
       if (msg.type === "turn_end") {
+        // Show user transcript as a right-aligned chat bubble
+        addChatBubble(msg.text, true);
+        // Show 'Echo is thinking...' bubble (left)
+        addChatBubble("Echo is thinking...", false, "thinking");
         finalTranscriptDiv.innerText +=
           (finalTranscriptDiv.innerText ? "\n" : "") + msg.text;
         statusDiv.textContent = "⏸️ Turn ended, you can continue speaking...";
@@ -41,13 +63,20 @@ async function startRecording() {
         stopRecording();
       } else if (msg.type === "session_start") {
         statusDiv.textContent = "🟢 Session started.";
+      } else if (msg.type === "ai_text") {
+        // Remove 'Echo is thinking...' bubble and show AI response
+        removeBubbleById("thinking");
+        addChatBubble(msg.text, false);
       } else if (msg.type === "audio_chunk") {
         // Handle incoming base64 audio chunks
-        console.log("Acknowledgement: Audio chunk received, base64 data length:", msg.data.length);
-      // Play the audio chunk immediately
-      playAudioChunk(msg.data);
-      // Accumulate the chunks in an array
-      audioChunks.push(msg.data);
+        console.log(
+          "Acknowledgement: Audio chunk received, base64 data length:",
+          msg.data.length
+        );
+        // Play the audio chunk immediately
+        playAudioChunk(msg.data);
+        // Accumulate the chunks in an array
+        audioChunks.push(msg.data);
       } else if (msg.type === "audio_start") {
         console.log("Audio playback started");
         // Initialize audio playback
@@ -74,15 +103,15 @@ async function startRecording() {
   }
 
   // Only create new AudioContext if it doesn't exist or is closed
-  if (!audioContext || audioContext.state === 'closed') {
+  if (!audioContext || audioContext.state === "closed") {
     audioContext = new AudioContext({ sampleRate: 16000 });
   }
-  
+
   // Only get user media if not already available
   if (!stream) {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   }
-  
+
   // Only create source if not already available
   if (!source) {
     source = audioContext.createMediaStreamSource(stream);
@@ -192,7 +221,7 @@ function initializeAudioPlayback() {
 function playAudioChunk(base64Data) {
   // Add the chunk to the queue
   audioQueue.push(base64Data);
-  
+
   // If not currently playing, start playback
   if (!isPlaying && audioQueue.length > 0) {
     console.log("Starting playback of audio chunk");
@@ -208,38 +237,42 @@ function processAudioQueue() {
     currentAudio = null;
     return;
   }
-  
+
   isPlaying = true;
   const base64Data = audioQueue.shift();
-  
+
   try {
     // Debug: Check if base64 data looks valid
     console.log("Processing audio chunk, base64 length:", base64Data.length);
-    
+
     // Skip very small chunks that are likely invalid/incomplete MP3 data
     if (base64Data.length < 1000) {
-      console.log("Skipping small/invalid audio chunk (length:", base64Data.length, ")");
+      console.log(
+        "Skipping small/invalid audio chunk (length:",
+        base64Data.length,
+        ")"
+      );
       // Continue with next chunk
       setTimeout(processAudioQueue, 50);
       return;
     }
-    
+
     // Decode base64 to binary data
     const binaryData = atob(base64Data);
     console.log("Binary data length:", binaryData.length);
-    
+
     const bytes = new Uint8Array(binaryData.length);
     for (let i = 0; i < binaryData.length; i++) {
       bytes[i] = binaryData.charCodeAt(i);
     }
-    
+
     // Create blob with proper MIME type
-    const blob = new Blob([bytes], { type: 'audio/mp3' });
+    const blob = new Blob([bytes], { type: "audio/mp3" });
     const url = URL.createObjectURL(blob);
-    
+
     // Create audio element and play the chunk
     currentAudio = new Audio(url);
-    
+
     currentAudio.onended = () => {
       console.log("Audio chunk playback completed");
       // Clean up the object URL
@@ -247,7 +280,7 @@ function processAudioQueue() {
       // When this chunk finishes, play the next one
       setTimeout(processAudioQueue, 50); // Small delay to ensure smooth transition
     };
-    
+
     currentAudio.onerror = (error) => {
       console.error("Error playing audio chunk:", error, "URL:", url);
       // Clean up the object URL
@@ -255,8 +288,8 @@ function processAudioQueue() {
       // Continue with next chunk even if this one fails
       setTimeout(processAudioQueue, 50);
     };
-    
-    currentAudio.play().catch(error => {
+
+    currentAudio.play().catch((error) => {
       console.error("Error starting audio playback:", error, "URL:", url);
       // Clean up the object URL
       URL.revokeObjectURL(url);
