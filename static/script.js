@@ -26,6 +26,7 @@ let ws;
 let audioContext, recorderNode, source, stream;
 let isRecording = false;
 let audioChunks = []; // Array to accumulate base64 audio chunks
+let currentPersona = "Teacher"; // Default persona
 
 micBtn.addEventListener("click", () => {
   if (isRecording) stopRecording();
@@ -33,9 +34,13 @@ micBtn.addEventListener("click", () => {
 });
 
 async function startRecording() {
-  // Only create new WebSocket if it doesn't exist or is closed
-  if (!ws || ws.readyState === WebSocket.CLOSED) {
-    ws = new WebSocket("ws://localhost:8000/ws/transcribe");
+    // Only create new WebSocket if it doesn't exist or is closed
+    if (!ws || ws.readyState === WebSocket.CLOSED) {
+        // Get selected persona
+        const personaSelect = document.getElementById("personaSelect");
+        currentPersona = personaSelect.value;
+        
+        ws = new WebSocket(`ws://localhost:8000/ws/transcribe?persona=${currentPersona}`);
     ws.binaryType = "arraybuffer";
 
     ws.onopen = () => {
@@ -207,6 +212,8 @@ function convertFloat32ToInt16(buffer) {
 let audioQueue = [];
 let isPlaying = false;
 let currentAudio = null;
+let audioContextPlayback = null;
+let audioBufferSource = null;
 
 function initializeAudioPlayback() {
   audioQueue = [];
@@ -214,6 +221,10 @@ function initializeAudioPlayback() {
   if (currentAudio) {
     currentAudio.pause();
     currentAudio = null;
+  }
+  if (audioBufferSource) {
+    audioBufferSource.stop();
+    audioBufferSource = null;
   }
   console.log("Audio playback initialized");
 }
@@ -231,10 +242,11 @@ function playAudioChunk(base64Data) {
   }
 }
 
-function processAudioQueue() {
+async function processAudioQueue() {
   if (audioQueue.length === 0) {
     isPlaying = false;
     currentAudio = null;
+    audioBufferSource = null;
     return;
   }
 
@@ -252,8 +264,8 @@ function processAudioQueue() {
         base64Data.length,
         ")"
       );
-      // Continue with next chunk
-      setTimeout(processAudioQueue, 50);
+      // Continue with next chunk with minimal delay
+      setTimeout(processAudioQueue, 10);
       return;
     }
 
@@ -270,44 +282,91 @@ function processAudioQueue() {
     const blob = new Blob([bytes], { type: "audio/mp3" });
     const url = URL.createObjectURL(blob);
 
-    // Create audio element and play the chunk
-    currentAudio = new Audio(url);
+    // Use Web Audio API for smoother playback
+    if (!audioContextPlayback) {
+      audioContextPlayback = new (window.AudioContext || window.webkitAudioContext)();
+    }
 
-    currentAudio.onended = () => {
-      console.log("Audio chunk playback completed");
-      // Clean up the object URL
-      URL.revokeObjectURL(url);
-      // When this chunk finishes, play the next one
-      setTimeout(processAudioQueue, 50); // Small delay to ensure smooth transition
-    };
+    // Fetch and decode the audio data
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    
+    try {
+      const audioBuffer = await audioContextPlayback.decodeAudioData(arrayBuffer);
+      
+      // Create and configure audio source
+      audioBufferSource = audioContextPlayback.createBufferSource();
+      audioBufferSource.buffer = audioBuffer;
+      audioBufferSource.connect(audioContextPlayback.destination);
+      
+      audioBufferSource.onended = () => {
+        console.log("Audio chunk playback completed");
+        // Clean up the object URL
+        URL.revokeObjectURL(url);
+        // When this chunk finishes, play the next one immediately
+        processAudioQueue();
+      };
+      
+      audioBufferSource.start();
+      
+    } catch (decodeError) {
+      console.error("Error decoding audio data:", decodeError);
+      // Fallback to HTML5 Audio if Web Audio API fails
+      fallbackToHTML5Audio(url);
+    }
 
-    currentAudio.onerror = (error) => {
-      console.error("Error playing audio chunk:", error, "URL:", url);
-      // Clean up the object URL
-      URL.revokeObjectURL(url);
-      // Continue with next chunk even if this one fails
-      setTimeout(processAudioQueue, 50);
-    };
-
-    currentAudio.play().catch((error) => {
-      console.error("Error starting audio playback:", error, "URL:", url);
-      // Clean up the object URL
-      URL.revokeObjectURL(url);
-      setTimeout(processAudioQueue, 50);
-    });
   } catch (error) {
     console.error("Error processing audio chunk:", error);
     // Continue with next chunk even if this one fails
-    setTimeout(processAudioQueue, 50);
+    setTimeout(processAudioQueue, 10);
   }
+}
+
+function fallbackToHTML5Audio(url) {
+  // Fallback to HTML5 Audio element
+  currentAudio = new Audio(url);
+
+  currentAudio.onended = () => {
+    console.log("Audio chunk playback completed (fallback)");
+    // Clean up the object URL
+    URL.revokeObjectURL(url);
+    // When this chunk finishes, play the next one with minimal delay
+    setTimeout(processAudioQueue, 10);
+  };
+
+  currentAudio.onerror = (error) => {
+    console.error("Error playing audio chunk (fallback):", error, "URL:", url);
+    // Clean up the object URL
+    URL.revokeObjectURL(url);
+    // Continue with next chunk even if this one fails
+    setTimeout(processAudioQueue, 10);
+  };
+
+  currentAudio.play().catch((error) => {
+    console.error("Error starting audio playback (fallback):", error, "URL:", url);
+    // Clean up the object URL
+    URL.revokeObjectURL(url);
+    setTimeout(processAudioQueue, 10);
+  });
 }
 
 // Function to stop all audio playback
 function stopAudioPlayback() {
   audioQueue = [];
   isPlaying = false;
+  
   if (currentAudio) {
     currentAudio.pause();
     currentAudio = null;
+  }
+  
+  if (audioBufferSource) {
+    audioBufferSource.stop();
+    audioBufferSource = null;
+  }
+  
+  if (audioContextPlayback) {
+    audioContextPlayback.close();
+    audioContextPlayback = null;
   }
 }

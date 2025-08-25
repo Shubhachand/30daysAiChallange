@@ -11,7 +11,7 @@ from app.models.schemas import AgentChatResponse
 router = APIRouter(prefix="/agent", tags=["agent"])
 
 @router.post("/chat/{session_id}", response_model=AgentChatResponse)
-async def chat(session_id: str, file: UploadFile = File(...)):
+async def chat(session_id: str, file: UploadFile = File(...), persona: str = "Teacher"):
     path = await save_temp_upload(file)
     try:
         transcription = stt.transcribe_file(path) or settings.FALLBACK_TEXT
@@ -24,7 +24,9 @@ async def chat(session_id: str, file: UploadFile = File(...)):
             for m in history
         )
 
-        reply = llm.generate(prompt) or settings.FALLBACK_TEXT
+        # Generate persona-specific prompt
+        persona_prompt = llm.generate_persona_prompt(persona, prompt)
+        reply = llm.generate(persona_prompt, persona) or settings.FALLBACK_TEXT
         if len(reply) > 3000:
             reply = reply[:2990] + "..."
 
