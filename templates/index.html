@@ -1,367 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AI Voice Assistant</title>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echo - AI Voice Assistant</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
 
-      body {
-        font-family: "Inter", Arial, sans-serif;
-        background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
-        margin: 0;
-        min-height: 100vh;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      h1 {
-        color: #5b21b6;
-        margin-top: 40px;
-        font-weight: 600;
-        letter-spacing: 1px;
-        text-align: center;
-        text-shadow: 0 2px 8px rgba(91, 33, 182, 0.08);
-      }
-
-      #bot-container {
-        background: #fff;
-        box-shadow: 0 8px 32px rgba(91, 33, 182, 0.1),
-          0 1.5px 6px rgba(0, 0, 0, 0.04);
-        border-radius: 22px;
-        padding: 36px 32px 28px 32px;
-        margin-top: 32px;
-        width: 100%;
-        max-width: 480px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        border: 1.5px solid #ede9fe;
-        position: relative;
-        overflow: hidden;
-      }
-
-      /* Avatar with glowing pulse */
-      #assistant-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        overflow: hidden;
-        position: relative;
-        margin-bottom: 20px;
-        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.6);
-        animation: idlePulse 3s infinite;
-        transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
-      }
-
-      #assistant-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      @keyframes idlePulse {
-        0% {
-          box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.6);
-        }
-        70% {
-          box-shadow: 0 0 20px 25px rgba(124, 58, 237, 0);
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
-        }
-      }
-
-      /* Speaking state */
-      #assistant-avatar.speaking {
-        transform: scale(1.05);
-        box-shadow: 0 0 30px 10px rgba(124, 58, 237, 0.8),
-          0 0 60px 20px rgba(6, 182, 212, 0.6);
-        animation: none; /* override idle pulse */
-      }
-
-      /* Sparks around avatar */
-      .spark {
-        position: absolute;
-        width: 8px;
-        height: 8px;
-        background: radial-gradient(circle, #7c3aed, transparent);
-        border-radius: 50%;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      /* Sparks animate only when speaking */
-      #assistant-avatar.speaking .spark {
-        animation: sparkAnim 2s infinite;
-        opacity: 0.7;
-      }
-
-      @keyframes sparkAnim {
-        from {
-          transform: scale(0.5) translateY(0);
-          opacity: 1;
-        }
-        to {
-          transform: scale(2) translateY(-40px);
-          opacity: 0;
-        }
-      }
-
-      #transcriptions {
-        margin-top: 18px;
-        border-radius: 12px;
-        background: #f3f4f6;
-        min-height: 120px;
-        max-height: 260px;
-        overflow-y: auto;
-        font-size: 1.08rem;
-        color: #22223b;
-        box-shadow: 0 1px 3px rgba(91, 33, 182, 0.04);
-        white-space: pre-wrap;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
-      }
-
-      .chat-bubble {
-        align-self: flex-start;
-        background: linear-gradient(90deg, #ede9fe 0%, #e0e7ff 100%);
-        color: #3b0764;
-        padding: 12px 18px;
-        border-radius: 16px 16px 16px 4px;
-        margin: 8px 18px 0 8px;
-        font-size: 1.08rem;
-        box-shadow: 0 1px 4px rgba(91, 33, 182, 0.06);
-        max-width: 90%;
-        word-break: break-word;
-        animation: fadeIn 0.5s;
-      }
-
-      .chat-bubble.user {
-        align-self: flex-end;
-        background: linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%);
-        color: #fff;
-        border-radius: 16px 16px 4px 16px;
-        margin: 8px 8px 0 18px;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes visualizer {
-        0%,
-        100% {
-          transform: scaleY(0.5);
-        }
-        50% {
-          transform: scaleY(1);
-        }
-      }
-
-      .button-row {
-        display: flex;
-        gap: 12px;
-        margin-top: 18px;
-        margin-bottom: 6px;
-        width: 100%;
-      }
-
-      button {
-        flex: 1 1 0;
-        padding: 12px 0;
-        font-size: 1.08rem;
-        font-weight: 600;
-        border: none;
-        border-radius: 8px;
-        background: linear-gradient(90deg, #7c3aed 0%, #06b6d4 100%);
-        color: #fff;
-        box-shadow: 0 2px 8px rgba(91, 33, 182, 0.08);
-        cursor: pointer;
-        transition: background 0.2s, box-shadow 0.2s;
-      }
-
-      button:disabled {
-        background: #c7d2fe;
-        color: #a1a1aa;
-        cursor: not-allowed;
-        box-shadow: none;
-      }
-
-      button:not(:disabled):hover {
-        background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 100%);
-        box-shadow: 0 4px 16px rgba(91, 33, 182, 0.12);
-      }
-    </style>
-  </head>
-  <body>
-    <h1>🎤 ECHO</h1>
-    <div id="bot-container">
-      <!-- Avatar with sparks -->
-      <div id="assistant-avatar">
-        <img src="/static/image.png" alt="AI Avatar" />
-        <div class="spark" style="top: 10px; left: 50px"></div>
-        <div
-          class="spark"
-          style="top: 30px; left: 90px; animation-delay: 0.5s"
-        ></div>
-        <div
-          class="spark"
-          style="top: 80px; left: 20px; animation-delay: 1s"
-        ></div>
-        <div
-          class="spark"
-          style="top: 100px; left: 70px; animation-delay: 1.5s"
-        ></div>
-      </div>
-
-      <!-- Persona Selection -->
-      <div class="persona-selector" style="margin-bottom: 20px; width: 100%">
-        <label
-          for="personaSelect"
-          style="
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #5b21b6;
-          "
-          >Choose AI Persona:</label
-        >
-        <select
-          id="personaSelect"
-          style="
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 2px solid #e0e7ff;
-            background: white;
-            font-size: 1rem;
-          "
-        >
-          <option value="Default">🟢 Echo (Default)</option>
-          <option value="Teacher">�‍🏫 Ms. Ananya (Teacher)</option>
-          <option value="Pirate">🏴‍☠️ Captain Echo (Pirate)</option>
-          <option value="Cowboy">🤠 Tex Echo (Cowboy)</option>
-          <option value="Robot">🤖 Robo Echo (Robot)</option>
-        </select>
-      </div>
-
-      <div class="button-row">
-        <button id="micBtn">🎤 Start Conversation</button>
-      </div>
-
-      <div id="transcriptions">
-        <div class="chat-bubble">Waiting to start...</div>
-      </div>
-
-      <div
-        id="status"
-        style="margin-top: 10px; color: #666; font-size: 14px"
-      ></div>
-      <div id="finalTranscript" style="margin-top: 10px; display: none"></div>
-
-      <!-- Audio Visualizer -->
-      <div
-        id="audioVisualizer"
-        style="margin-top: 10px; display: none; text-align: center"
-      >
-        <div
-          style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 3px;
-            height: 30px;
-          "
-        >
-          <div
-            class="visualizer-bar"
-            style="
-              width: 3px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              border-radius: 2px;
-              animation: visualizer 1.5s infinite ease-in-out;
-            "
-          ></div>
-          <div
-            class="visualizer-bar"
-            style="
-              width: 3px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              border-radius: 2px;
-              animation: visualizer 1.5s infinite ease-in-out;
-              animation-delay: 0.1s;
-            "
-          ></div>
-          <div
-            class="visualizer-bar"
-            style="
-              width: 3px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              border-radius: 2px;
-              animation: visualizer 1.5s infinite ease-in-out;
-              animation-delay: 0.2s;
-            "
-          ></div>
-          <div
-            class="visualizer-bar"
-            style="
-              width: 3px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              border-radius: 2px;
-              animation: visualizer 1.5s infinite ease-in-out;
-              animation-delay: 0.3s;
-            "
-          ></div>
-          <div
-            class="visualizer-bar"
-            style="
-              width: 3px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              border-radius: 2px;
-              animation: visualizer 1.5s infinite ease-in-out;
-              animation-delay: 0.4s;
-            "
-          ></div>
-        </div>
-        <div style="font-size: 12px; color: #667eea; margin-top: 5px">
-          AI is speaking...
-        </div>
-      </div>
+  <div id="app">
+    <!-- Logo -->
+    <div class="logo-container">
+      <img src="/static/image.png" alt="Echo AI" class="ai-logo">
+      <p class="ai-smile">😊</p>
     </div>
 
-    <!-- keep your existing logic -->
-    <script src="static/script.js"></script>
+    <h1>🎙️ Echo - AI Voice Assistant</h1>
 
-    <script>
-      // Hook into your existing start/stop to animate avatar
-      const avatar = document.getElementById("assistant-avatar");
+    <!-- Persona Selection -->
+    <div class="persona-select">
+      <label for="personaSelect">Select Persona:</label>
+      <select id="personaSelect">
+        <option value="Teacher">Teacher</option>
+        <option value="Pirate">Pirate</option>
+        <option value="Cowboy">Cowboy</option>
+        <option value="Robot">Robot</option>
+      </select>
+    </div>
 
-      function startSpeakingAnimation() {
-        avatar.classList.add("speaking");
-        document.getElementById("audioVisualizer").style.display = "block";
-      }
+    <!-- Mic Button -->
+    <button id="micBtn" aria-label="Start recording">🎤</button>
+    <div id="status">🎙️ Ready to listen...</div>
 
-      function stopSpeakingAnimation() {
-        avatar.classList.remove("speaking");
-        document.getElementById("audioVisualizer").style.display = "none";
-      }
+    <!-- Conversation -->
+    <div class="box">
+      <div class="label">💬 Conversation:</div>
+      <div id="transcriptions"></div>
+    </div>
 
-      // Export to global so script.js can call
-      window.startSpeakingAnimation = startSpeakingAnimation;
-      window.stopSpeakingAnimation = stopSpeakingAnimation;
-    </script>
-  </body>
+    <!-- Transcript -->
+    <div class="box">
+      <div class="label">📝 Final Transcript:</div>
+      <div id="finalTranscript"></div>
+    </div>
+
+    <!-- Floating Config Button -->
+    <button id="openConfigBtn" class="config-btn">⚙️</button>
+  </div>
+
+  <!-- Slide-in API Config -->
+  <div id="apiConfigPanel">
+    <h2>API Key Configuration</h2>
+    <div class="form-group"><label>Murf API Key:</label><input type="password" id="murfApiKey"><button type="button" class="toggle-password">👁️</button></div>
+    <div class="form-group"><label>AssemblyAI API Key:</label><input type="password" id="assemblyAiApiKey"><button type="button" class="toggle-password">👁️</button></div>
+    <div class="form-group"><label>Gemini API Key:</label><input type="password" id="geminiApiKey"><button type="button" class="toggle-password">👁️</button></div>
+    <div class="form-group"><label>Tavily API Key:</label><input type="password" id="tavilyApiKey"><button type="button" class="toggle-password">👁️</button></div>
+    <div class="form-group"><label>News API Key:</label><input type="password" id="newsApiKey"><button type="button" class="toggle-password">👁️</button></div>
+    <button id="saveApiKeysBtn">Save API Keys</button>
+    <button id="resetApiKeysBtn">Reset to Default</button>
+    <button id="closeConfigBtn" class="close-btn">✖</button>
+  </div>
+
+
+  
+
+  <script src="/static/script.js"></script>
+  <script>
+    // 👁️ Toggle Show/Hide Password
+    document.querySelectorAll(".toggle-password").forEach(toggle => {
+      toggle.addEventListener("click", () => {
+        const input = toggle.previousElementSibling;
+        if (input.type === "password") {
+          input.type = "text";
+          toggle.textContent = "🙈";
+        } else {
+          input.type = "password";
+          toggle.textContent = "👁️";
+        }
+      });
+    });
+  </script>
+</body>
 </html>

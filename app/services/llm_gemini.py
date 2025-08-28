@@ -7,6 +7,7 @@ import requests
 import google.generativeai as genai
 from app.config import settings
 from app.services.web_search import web_search
+from app.services.news_service import news_service
 
 log = logging.getLogger(__name__)
 
@@ -66,8 +67,26 @@ def handle_special_queries(user_query: str) -> Optional[str]:
 
     # -------------------- General news / updates --------------------
     if any(word in query for word in ["news", "update", "latest", "developments"]):
+        # Extract location from query if present
+        location = None
+        if "in " in user_query.lower() or "of " in user_query.lower():
+            # Try to extract location after "in" or "of"
+            import re
+            location_match = re.search(r"(?:in|of|from)\s+([a-zA-Z\s]+?)(?:\s+(?:news|update|latest|developments)|$)", user_query.lower())
+            if location_match:
+                location = location_match.group(1).strip()
+        
+        # Try dedicated news service first
+        if location:
+            news_results = news_service.get_news_by_location(location, max_results=5)
+        else:
+            news_results = news_service.get_latest_news(user_query, max_results=5)
+            
+        if news_results:
+            return f"Here's the latest news:\n{web_search.format_search_results(news_results)}"
+        # Fallback to web search if news service fails
         results = web_search.search_web(user_query, max_results=3)
-        return f"Here’s the latest news:\n{web_search.format_search_results(results)}"
+        return f"Here's the latest news:\n{web_search.format_search_results(results)}"
 
     # -------------------- Fallback --------------------
     return None
@@ -87,8 +106,8 @@ class GeminiLLM:
 
     def _call_generate(self, prompt: str, **kwargs) -> Any:
         if self.model:
-            return self.model.generate_content(prompt=prompt, **kwargs)
-        return genai.generate_content(model=self.model_name, prompt=prompt, **kwargs)
+            return self.model.generate_content(prompt, **kwargs)
+        return genai.generate_content(model=self.model_name, contents=prompt, **kwargs)
 
     def generate_persona_prompt(self, persona: str, user_input: str) -> str:
         """Persona prompts designed to sound like a news anchor."""

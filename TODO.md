@@ -14,10 +14,10 @@
 - [ ] Test weather functionality
 
 ## Phase 3: News Skill
-- [ ] Update config.py with NEWS_API_KEY
-- [ ] Create news_service.py
-- [ ] Update llm_gemini.py with news function
-- [ ] Test news functionality
+- [x] Update config.py with NEWS_API_KEY
+- [x] Create news_service.py
+- [x] Update llm_gemini.py with news function
+- [x] Test news functionality
 
 ## Phase 4: Testing & Integration
 - [x] Test web search functionality

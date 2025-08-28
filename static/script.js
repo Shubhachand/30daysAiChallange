@@ -1,8 +1,44 @@
 const micBtn = document.getElementById("micBtn");
 const statusDiv = document.getElementById("status");
-
 const finalTranscriptDiv = document.getElementById("finalTranscript");
 const transcriptionsDiv = document.getElementById("transcriptions");
+
+// API Key Configuration Elements
+const openConfigBtn = document.getElementById("openConfigBtn");
+const apiConfigPanel = document.getElementById("apiConfigPanel");
+const saveApiKeysBtn = document.getElementById("saveApiKeysBtn");
+const resetApiKeysBtn = document.getElementById("resetApiKeysBtn");
+const closeConfigBtn = document.getElementById("closeConfigBtn");
+
+// Toggle API Key Configuration Form
+openConfigBtn.addEventListener("click", () => {
+  apiConfigPanel.classList.add("open");
+});
+
+closeConfigBtn.addEventListener("click", () => {
+  apiConfigPanel.classList.remove("open");
+});
+
+function setAISmile(state) {
+  const smile = document.getElementById("ai-smile");
+  switch (state) {
+    case "listening":
+      smile.textContent = "🟢";
+      smile.className = "ai-smile listening";
+      break;
+    case "thinking":
+      smile.textContent = "🤔";
+      smile.className = "ai-smile thinking";
+      break;
+    case "speaking":
+      smile.textContent = "🗣️";
+      smile.className = "ai-smile speaking";
+      break;
+    default:
+      smile.textContent = "😊";
+      smile.className = "ai-smile idle";
+  }
+}
 
 // Helper to add a chat bubble
 function addChatBubble(text, isUser = false, bubbleId = null) {
@@ -22,6 +58,88 @@ function removeBubbleById(bubbleId) {
   if (bubble) bubble.remove();
 }
 
+// Function to save API keys
+function saveApiKeys() {
+  const murfApiKey = document.getElementById("murfApiKey").value;
+  const assemblyAiApiKey = document.getElementById("assemblyAiApiKey").value;
+  const geminiApiKey = document.getElementById("geminiApiKey").value;
+  const tavilyApiKey = document.getElementById("tavilyApiKey").value;
+  const newsApiKey = document.getElementById("newsApiKey").value;
+
+  // Save the keys to local storage
+  localStorage.setItem("MURF_API_KEY", murfApiKey);
+  localStorage.setItem("ASSEMBLYAI_API_KEY", assemblyAiApiKey);
+  localStorage.setItem("GEMINI_API_KEY", geminiApiKey);
+  localStorage.setItem("TAVILY_API_KEY", tavilyApiKey);
+  localStorage.setItem("NEWS_API_KEY", newsApiKey);
+
+  // Send the keys to the backend
+  fetch("/api/save-api-keys", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      MURF_API_KEY: murfApiKey,
+      ASSEMBLYAI_API_KEY: assemblyAiApiKey,
+      GEMINI_API_KEY: geminiApiKey,
+      TAVILY_API_KEY: tavilyApiKey,
+      NEWS_API_KEY: newsApiKey,
+    }),
+  })
+    .then((response) => {
+      if (response.ok) {
+        alert("API keys saved successfully!");
+      } else {
+        alert("Failed to save API keys.");
+      }
+    })
+    .catch((error) => {
+      console.error("Error saving API keys:", error);
+      alert("An error occurred while saving API keys.");
+    });
+}
+
+// Function to reset API keys to default
+function resetApiKeys() {
+  document.getElementById("murfApiKey").value = "";
+  document.getElementById("assemblyAiApiKey").value = "";
+  document.getElementById("geminiApiKey").value = "";
+  document.getElementById("tavilyApiKey").value = "";
+  document.getElementById("newsApiKey").value = "";
+
+  // Clear local storage
+  localStorage.removeItem("MURF_API_KEY");
+  localStorage.removeItem("ASSEMBLYAI_API_KEY");
+  localStorage.removeItem("GEMINI_API_KEY");
+  localStorage.removeItem("TAVILY_API_KEY");
+  localStorage.removeItem("NEWS_API_KEY");
+
+  alert("API keys reset to default.");
+}
+
+// Function to load saved API keys
+function loadSavedApiKeys() {
+  const murfApiKey = localStorage.getItem("MURF_API_KEY") || "";
+  const assemblyAiApiKey = localStorage.getItem("ASSEMBLYAI_API_KEY") || "";
+  const geminiApiKey = localStorage.getItem("GEMINI_API_KEY") || "";
+  const tavilyApiKey = localStorage.getItem("TAVILY_API_KEY") || "";
+  const newsApiKey = localStorage.getItem("NEWS_API_KEY") || "";
+
+  document.getElementById("murfApiKey").value = murfApiKey;
+  document.getElementById("assemblyAiApiKey").value = assemblyAiApiKey;
+  document.getElementById("geminiApiKey").value = geminiApiKey;
+  document.getElementById("tavilyApiKey").value = tavilyApiKey;
+  document.getElementById("newsApiKey").value = newsApiKey;
+}
+
+// Load saved API keys when the page loads
+document.addEventListener("DOMContentLoaded", loadSavedApiKeys);
+
+// Event listeners for buttons
+saveApiKeysBtn.addEventListener("click", saveApiKeys);
+resetApiKeysBtn.addEventListener("click", resetApiKeys);
+
 let ws;
 let audioContext, recorderNode, source, stream;
 let isRecording = false;
@@ -34,13 +152,15 @@ micBtn.addEventListener("click", () => {
 });
 
 async function startRecording() {
-    // Only create new WebSocket if it doesn't exist or is closed
-    if (!ws || ws.readyState === WebSocket.CLOSED) {
-        // Get selected persona
-        const personaSelect = document.getElementById("personaSelect");
-        currentPersona = personaSelect.value;
-        
-        ws = new WebSocket(`ws://localhost:8000/ws/transcribe?persona=${currentPersona}`);
+  // Only create new WebSocket if it doesn't exist or is closed
+  if (!ws || ws.readyState === WebSocket.CLOSED) {
+    // Get selected persona
+    const personaSelect = document.getElementById("personaSelect");
+    currentPersona = personaSelect.value;
+
+    ws = new WebSocket(
+      `ws://localhost:8000/ws/transcribe?persona=${currentPersona}`
+    );
     ws.binaryType = "arraybuffer";
 
     ws.onopen = () => {
@@ -284,21 +404,24 @@ async function processAudioQueue() {
 
     // Use Web Audio API for smoother playback
     if (!audioContextPlayback) {
-      audioContextPlayback = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextPlayback = new (window.AudioContext ||
+        window.webkitAudioContext)();
     }
 
     // Fetch and decode the audio data
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
-    
+
     try {
-      const audioBuffer = await audioContextPlayback.decodeAudioData(arrayBuffer);
-      
+      const audioBuffer = await audioContextPlayback.decodeAudioData(
+        arrayBuffer
+      );
+
       // Create and configure audio source
       audioBufferSource = audioContextPlayback.createBufferSource();
       audioBufferSource.buffer = audioBuffer;
       audioBufferSource.connect(audioContextPlayback.destination);
-      
+
       audioBufferSource.onended = () => {
         console.log("Audio chunk playback completed");
         // Clean up the object URL
@@ -306,15 +429,13 @@ async function processAudioQueue() {
         // When this chunk finishes, play the next one immediately
         processAudioQueue();
       };
-      
+
       audioBufferSource.start();
-      
     } catch (decodeError) {
       console.error("Error decoding audio data:", decodeError);
       // Fallback to HTML5 Audio if Web Audio API fails
       fallbackToHTML5Audio(url);
     }
-
   } catch (error) {
     console.error("Error processing audio chunk:", error);
     // Continue with next chunk even if this one fails
@@ -343,7 +464,12 @@ function fallbackToHTML5Audio(url) {
   };
 
   currentAudio.play().catch((error) => {
-    console.error("Error starting audio playback (fallback):", error, "URL:", url);
+    console.error(
+      "Error starting audio playback (fallback):",
+      error,
+      "URL:",
+      url
+    );
     // Clean up the object URL
     URL.revokeObjectURL(url);
     setTimeout(processAudioQueue, 10);
@@ -354,17 +480,17 @@ function fallbackToHTML5Audio(url) {
 function stopAudioPlayback() {
   audioQueue = [];
   isPlaying = false;
-  
+
   if (currentAudio) {
     currentAudio.pause();
     currentAudio = null;
   }
-  
+
   if (audioBufferSource) {
     audioBufferSource.stop();
     audioBufferSource = null;
   }
-  
+
   if (audioContextPlayback) {
     audioContextPlayback.close();
     audioContextPlayback = null;
