@@ -1,194 +1,376 @@
-/* Body styles */
+/* --- Google Font Import --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+/* --- Global Styles & Body --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  background: linear-gradient(135deg, #6a11cb, #2575fc);
-  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(125deg, #1d2b64, #f8cdda);
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
+  min-height: 100vh;
+  padding: 20px;
   overflow: hidden;
+  color: #fff;
 }
 
-/* Glassmorphic App container */
+/* --- Glassmorphic App Container --- */
 #app {
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 30px;
-  width: 380px;
+  background: rgba(255, 255, 255, 0.15);
+  -webkit-backdrop-filter: blur(25px);
+  backdrop-filter: blur(25px);
+  border-radius: 28px;
+  padding: 35px;
+  width: 100%;
+  max-width: 480px;
   text-align: center;
-  box-shadow: 8px 8px 20px rgba(0,0,0,0.3),
-              -6px -6px 16px rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   position: relative;
+  transition: transform 0.3s ease;
 }
 
-/* Logo */
+/* --- Logo & Title --- */
 .logo-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-bottom: 25px;
 }
 .ai-logo {
-  width: 90px;
-  height: 90px;
+  width: 95px;
+  height: 95px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 10px;
-  box-shadow: 0 0 18px rgba(255,255,255,0.3);
+  margin-bottom: 15px;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.5);
 }
 .ai-smile {
-  font-size: 1.6rem;
-  margin: 0;
+  font-size: 1.9rem;
+  margin: -18px 0 12px 0;
   color: #fff;
 }
-
-/* Headings */
 h1 {
-  margin-top: 0;
-  font-size: 1.6rem;
-  margin-bottom: 18px;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 28px;
   color: #fff;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  text-shadow: 0 3px 6px rgba(0,0,0,0.3);
 }
 
-/* Microphone Button */
-button#micBtn {
-  background: linear-gradient(135deg, #7b2ff7, #f107a3);
+/* --- Custom Persona Selector --- */
+.persona-select {
+  margin-bottom: 25px;
+  text-align: left;
+}
+.persona-select label {
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: block;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.05rem;
+}
+#personaSelect {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1.05rem;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1.2rem center;
+  background-size: 1.1em;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+#personaSelect:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+#personaSelect option {
+  background-color: rgba(30, 30, 30, 0.9);
+  color: #fff;
+  padding: 10px 15px;
+  font-size: 1rem;
+}
+#personaSelect option:checked {
+  background-color: #337ab7;
+  color: white;
+}
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  select#personaSelect {
+    padding-right: 2.5rem;
+  }
+  select#personaSelect:focus option {
+    background-color: rgba(30, 30, 30, 0.9);
+  }
+}
+
+/* --- Microphone Button --- */
+#micBtn {
+  background: linear-gradient(145deg, #fa7e1e, #d62976, #962fbf, #4f5bd5);
   border: none;
   border-radius: 50%;
-  width: 75px;
-  height: 75px;
-  font-size: 2rem;
+  width: 85px;
+  height: 85px;
+  font-size: 2.4rem;
   color: white;
-  margin: 15px auto;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  margin: 15px auto 20px auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-button#micBtn:hover {
-  transform: scale(1.12);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+#micBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.4);
 }
-button#micBtn.recording {
+#micBtn.recording {
   background: linear-gradient(135deg, #d32f2f, #ff1744);
   animation: pulse 1.5s infinite;
 }
-
 @keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 20px rgba(211, 47, 47, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+  70% { box-shadow: 0 0 0 25px rgba(255, 82, 82, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
 }
 
-/* Status */
+/* --- Status Text --- */
 #status {
-  font-size: 1rem;
-  margin-bottom: 15px;
+  font-size: 1.05rem;
+  margin-bottom: 25px;
   font-style: italic;
   color: rgba(255,255,255,0.85);
+  min-height: 28px;
 }
 
-/* Conversation and transcript boxes */
+/* --- Conversation & Transcript Boxes --- */
 .box {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  padding: 14px;
-  border-radius: 12px;
-  margin-bottom: 14px;
-  font-size: 0.95rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 18px;
+  border-radius: 18px;
+  margin-bottom: 18px;
   text-align: left;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  min-height: 120px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
 }
 .label {
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   color: #fff;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.box::-webkit-scrollbar {
+  width: 8px;
+}
+.box::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+.box::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.4);
+  border-radius: 10px;
+}
+.box::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.6);
 }
 
-/* Chat bubbles */
+/* --- Chat Bubbles --- */
+#transcriptions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .chat-bubble {
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  max-width: 80%;
+  padding: 12px 18px;
+  border-radius: 22px;
+  max-width: 88%;
+  line-height: 1.5;
+  word-wrap: break-word;
+  font-size: 0.98rem;
 }
 .chat-bubble.user {
-  background: rgba(255,255,255,0.3);
-  color: #000;
-  margin-left: auto;
+  background: #ffffff;
+  color: #333;
+  align-self: flex-end;
+  border-bottom-right-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .chat-bubble:not(.user) {
-  background: rgba(98,0,234,0.8);
+  background: #7b2ff7;
   color: white;
+  align-self: flex-start;
+  border-bottom-left-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Floating Config Button */
+/* --- Floating Config Button --- */
 .config-btn {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(255,255,255,0.2);
+  top: 18px;
+  right: 18px;
+  background: rgba(255,255,255,0.25);
   border: none;
-  font-size: 1.4rem;
-  padding: 8px 12px;
-  border-radius: 10px;
+  font-size: 1.5rem;
+  padding: 10px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.config-btn:hover {
+  background-color: rgba(255,255,255,0.45);
+  transform: rotate(60deg) scale(1.05);
 }
 
-/* Floating Config Panel */
+/* --- Slide-in API Config Panel --- */
 #apiConfigPanel {
   position: fixed;
-  right: -400px;
+  right: -100%;
   top: 0;
-  width: 350px;
+  width: 400px;
+  max-width: 95%;
   height: 100%;
-  background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255,255,255,0.3);
-  box-shadow: -6px 0 18px rgba(0,0,0,0.3);
-  padding: 20px;
-  transition: right 0.4s ease;
+  background: rgba(240, 240, 240, 0.9);
+  -webkit-backdrop-filter: blur(35px);
+  backdrop-filter: blur(35px);
+  border-left: 1px solid rgba(255,255,255,0.4);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+  padding: 35px;
+  transition: right 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   overflow-y: auto;
   z-index: 1000;
-  color: #000;
+  color: #333;
 }
 #apiConfigPanel.open {
   right: 0;
 }
 #apiConfigPanel h2 {
   margin-top: 0;
-  color: #333;
+  margin-bottom: 30px;
+  font-weight: 700;
+  color: #111;
+  text-align: center;
+  font-size: 1.8rem;
 }
 
-/* API Key Configuration Form */
+/* --- API Key Configuration Form --- */
+/* Container for each input + action button */
 .form-group {
-  margin-bottom: 15px;
+  position: relative;
+  margin-bottom: 22px;
 }
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333;
-}
-.form-group input {
+
+/* API input field */
+.form-group input[type="password"],
+.form-group input[type="text"] {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 14px 15px;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
   box-sizing: border-box;
 }
-.form-group .toggle-password {
+
+/* Action button (e.g., for a 'Copy' icon) placed OUTSIDE the input field */
+.form-group .input-action-btn {
   position: absolute;
-  right: 10px;
-  top: 30px;
-  background: none;
-  border: none;
+  right: -55px; /* Positioned outside the typing bar */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px; /* Changed from circle to a 'squircle' */
   cursor: pointer;
+  font-size: 1.2rem; /* Ideal for an icon like a copy/paste symbol */
+  color: #666;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+.form-group .input-action-btn:hover {
+  background-color: rgba(0,0,0,0.15);
+  color: #333;
+  border-color: rgba(0,0,0,0.2);
+  transform: translateY(-50%) scale(1.05); /* Added subtle hover effect */
+}
+
+
+#apiConfigPanel button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+}
+#saveApiKeysBtn {
+  background: linear-gradient(135deg, #7b2ff7, #4f5bd5);
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+#saveApiKeysBtn:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  transform: translateY(-3px);
+}
+#resetApiKeysBtn {
+  background: #757575;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+#resetApiKeysBtn:hover {
+  background: #616161;
+  transform: translateY(-2px);
+}
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none !important;
+  color: #555 !important;
+  font-size: 1.7rem;
+  width: auto !important;
+  padding: 8px !important;
+  margin: 0 !important;
+  border-radius: 50%;
+}
+.close-btn:hover {
+  color: #000 !important;
+  background-color: rgba(0,0,0,0.05) !important;
 }
