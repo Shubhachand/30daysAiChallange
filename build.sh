@@ -1,9 +1,13 @@
-#!/usr/bin/env bash
-# exit on error
-set -o errexit
+#!/bin/bash
 
-# Install system dependencies
-apt-get update && apt-get install -y portaudio19-dev libportaudio2
+# Update system packages
+apt-get update
 
-# Install python dependencies
+# Install PortAudio headers so PyAudio can compile
+apt-get install -y portaudio19-dev
+
+# Upgrade pip
+python3 -m pip install --upgrade pip
+
+# Install Python dependencies
 pip install -r requirements.txt
