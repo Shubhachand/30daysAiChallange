@@ -41,3 +41,6 @@ async def query(file: UploadFile = File(...)):
     finally:
         if os.path.exists(path):
             os.remove(path)
+            
+            
+            

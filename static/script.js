@@ -158,9 +158,13 @@ async function startRecording() {
     const personaSelect = document.getElementById("personaSelect");
     currentPersona = personaSelect.value;
 
-    ws = new WebSocket(
-      `ws://localhost:8000/ws/transcribe?persona=${currentPersona}`
-    );
+    // Determine WS URL: localhost for dev, Render for production
+    const isLocal = window.location.hostname === "localhost";
+    const wsUrl = isLocal
+      ? `ws://localhost:8000/ws/transcribe?persona=${currentPersona}`
+      : `wss://three0daysaichallange.onrender.com/ws/transcribe?persona=${currentPersona}`;
+
+    ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
 
     ws.onopen = () => {
@@ -174,10 +178,9 @@ async function startRecording() {
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       console.log("Received WS message:", msg);
+
       if (msg.type === "turn_end") {
-        // Show user transcript as a right-aligned chat bubble
         addChatBubble(msg.text, true);
-        // Show 'Echo is thinking...' bubble (left)
         addChatBubble("Echo is thinking...", false, "thinking");
         finalTranscriptDiv.innerText +=
           (finalTranscriptDiv.innerText ? "\n" : "") + msg.text;
@@ -189,22 +192,17 @@ async function startRecording() {
       } else if (msg.type === "session_start") {
         statusDiv.textContent = "🟢 Session started.";
       } else if (msg.type === "ai_text") {
-        // Remove 'Echo is thinking...' bubble and show AI response
         removeBubbleById("thinking");
         addChatBubble(msg.text, false);
       } else if (msg.type === "audio_chunk") {
-        // Handle incoming base64 audio chunks
         console.log(
           "Acknowledgement: Audio chunk received, base64 data length:",
           msg.data.length
         );
-        // Play the audio chunk immediately
         playAudioChunk(msg.data);
-        // Accumulate the chunks in an array
         audioChunks.push(msg.data);
       } else if (msg.type === "audio_start") {
         console.log("Audio playback started");
-        // Initialize audio playback
         initializeAudioPlayback();
       }
     };
@@ -215,16 +213,16 @@ async function startRecording() {
       micBtn.classList.remove("recording");
       micBtn.setAttribute("aria-label", "Start recording");
     };
+
     ws.onerror = () => {
       statusDiv.textContent = "⚠ Connection error";
     };
   } else if (ws.readyState === WebSocket.OPEN) {
-    // WebSocket is already open, just update the UI
     statusDiv.textContent = "🎧 Connected & streaming audio...";
     isRecording = true;
     micBtn.classList.add("recording");
     micBtn.setAttribute("aria-label", "Stop recording");
-    audioChunks = []; // Reset audio chunks array for new session
+    audioChunks = [];
   }
 
   // Only create new AudioContext if it doesn't exist or is closed
@@ -232,12 +230,10 @@ async function startRecording() {
     audioContext = new AudioContext({ sampleRate: 16000 });
   }
 
-  // Only get user media if not already available
   if (!stream) {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   }
 
-  // Only create source if not already available
   if (!source) {
     source = audioContext.createMediaStreamSource(stream);
   }
@@ -266,13 +262,10 @@ async function startRecording() {
   recorderNode = new AudioWorkletNode(audioContext, "recorder-processor");
   recorderNode.port.onmessage = (e) => {
     if (ws.readyState === WebSocket.OPEN) {
-      // e.data is [Float32Array, ...] (one per channel)
-      const channelData = e.data[0]; // mono
+      const channelData = e.data[0];
       if (channelData && channelData.length > 0) {
-        // Accumulate samples
         audioBuffer.push(...channelData);
 
-        // 800 samples = 50ms at 16kHz
         while (audioBuffer.length >= 800) {
           const chunk = audioBuffer.slice(0, 800);
           ws.send(convertFloat32ToInt16(new Float32Array(chunk)));
@@ -285,6 +278,7 @@ async function startRecording() {
   source.connect(recorderNode);
   recorderNode.connect(audioContext.destination);
 }
+
 
 function stopRecording() {
   if (!isRecording) return;
