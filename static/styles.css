@@ -16,16 +16,16 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: 20px;
-  overflow: hidden;
+  /* overflow: hidden;  <-- FIXED: This line has been removed to allow scrolling */
   color: #fff;
 }
 
-/* --- Glassmorphic App Container --- */
+/* --- Square-Boxed App Container --- */
 #app {
   background: rgba(255, 255, 255, 0.15);
   -webkit-backdrop-filter: blur(25px);
   backdrop-filter: blur(25px);
-  border-radius: 28px;
+  border-radius: 8px; /* MODIFIED for squared look */
   padding: 35px;
   width: 100%;
   max-width: 480px;
@@ -46,7 +46,7 @@ body {
 .ai-logo {
   width: 95px;
   height: 95px;
-  border-radius: 50%;
+  border-radius: 50%; /* NOTE: Kept circular as a design focal point */
   object-fit: cover;
   margin-bottom: 15px;
   box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
@@ -84,7 +84,7 @@ h1 {
   padding: 14px 20px;
   background: rgba(255, 255, 255, 0.25);
   border: 1.5px solid rgba(255, 255, 255, 0.4);
-  border-radius: 12px;
+  border-radius: 6px; /* MODIFIED for squared look */
   color: #fff;
   font-size: 1.05rem;
   font-family: 'Poppins', sans-serif;
@@ -107,24 +107,12 @@ h1 {
   padding: 10px 15px;
   font-size: 1rem;
 }
-#personaSelect option:checked {
-  background-color: #337ab7;
-  color: white;
-}
-@media screen and (-webkit-min-device-pixel-ratio:0) {
-  select#personaSelect {
-    padding-right: 2.5rem;
-  }
-  select#personaSelect:focus option {
-    background-color: rgba(30, 30, 30, 0.9);
-  }
-}
 
 /* --- Microphone Button --- */
 #micBtn {
   background: linear-gradient(145deg, #fa7e1e, #d62976, #962fbf, #4f5bd5);
   border: none;
-  border-radius: 50%;
+  border-radius: 6px; /* MODIFIED for squared look */
   width: 85px;
   height: 85px;
   font-size: 2.4rem;
@@ -164,13 +152,13 @@ h1 {
 .box {
   background: rgba(0, 0, 0, 0.25);
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 6px; /* MODIFIED for squared look */
   margin-bottom: 18px;
   text-align: left;
   border: 1px solid rgba(255, 255, 255, 0.15);
   min-height: 120px;
   max-height: 220px;
-  overflow-y: auto;
+  overflow-y: auto; /* This now works correctly */
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
 }
 .label {
@@ -186,11 +174,11 @@ h1 {
 }
 .box::-webkit-scrollbar-track {
   background: rgba(255,255,255,0.1);
-  border-radius: 10px;
+  border-radius: 4px; /* MODIFIED for squared look */
 }
 .box::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,0.4);
-  border-radius: 10px;
+  border-radius: 4px; /* MODIFIED for squared look */
 }
 .box::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.6);
@@ -204,24 +192,22 @@ h1 {
 }
 .chat-bubble {
   padding: 12px 18px;
-  border-radius: 22px;
+  border-radius: 6px; /* MODIFIED for squared look */
   max-width: 88%;
   line-height: 1.5;
-  word-wrap: break-word;
+  overflow-wrap: break-word; /* Ensures long text wraps to prevent overflow */
   font-size: 0.98rem;
 }
 .chat-bubble.user {
   background: #ffffff;
   color: #333;
   align-self: flex-end;
-  border-bottom-right-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .chat-bubble:not(.user) {
   background: #7b2ff7;
   color: white;
   align-self: flex-start;
-  border-bottom-left-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
@@ -236,7 +222,7 @@ h1 {
   padding: 10px;
   width: 45px;
   height: 45px;
-  border-radius: 50%;
+  border-radius: 6px; /* MODIFIED for squared look */
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
   display: flex;
@@ -281,19 +267,16 @@ h1 {
 }
 
 /* --- API Key Configuration Form --- */
-/* Container for each input + action button */
 .form-group {
   position: relative;
   margin-bottom: 22px;
 }
-
-/* API input field */
 .form-group input[type="password"],
 .form-group input[type="text"] {
   width: 100%;
   padding: 14px 15px;
   border: 1px solid #bbb;
-  border-radius: 10px;
+  border-radius: 6px; /* MODIFIED for squared look */
   background: rgba(255, 255, 255, 0.85);
   color: #333;
   font-family: 'Poppins', sans-serif;
@@ -301,38 +284,11 @@ h1 {
   box-sizing: border-box;
 }
 
-/* Action button (e.g., for a 'Copy' icon) placed OUTSIDE the input field */
-.form-group .input-action-btn {
-  position: absolute;
-  right: -55px; /* Positioned outside the typing bar */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  background: rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 12px; /* Changed from circle to a 'squircle' */
-  cursor: pointer;
-  font-size: 1.2rem; /* Ideal for an icon like a copy/paste symbol */
-  color: #666;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s ease;
-}
-.form-group .input-action-btn:hover {
-  background-color: rgba(0,0,0,0.15);
-  color: #333;
-  border-color: rgba(0,0,0,0.2);
-  transform: translateY(-50%) scale(1.05); /* Added subtle hover effect */
-}
-
-
 #apiConfigPanel button {
   width: 100%;
   padding: 14px;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px; /* MODIFIED for squared look */
   font-size: 1.05rem;
   font-weight: 600;
   font-family: 'Poppins', sans-serif;
