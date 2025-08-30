@@ -18,10 +18,23 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
 | ✅ 10| Automatic continuous conversations           | ✅ Done |
 | ✅ 11| Error handling & graceful recovery           | ✅ Done |
 | ✅ 12| UI revamp & conversation flow upgrade        | ✅ Done |
-| ⏳ 13–29 | Coming soon...                           | Ongoing |
-| 🔜 30 | Final App + LinkedIn Post + Deployment 🎉   | Pending |
-
----
+| ✅ 13 | Create README.md documentation              | ✅ Done |
+| ✅ 14 | Refactor code and upload to GitHub          | ✅ Done |
+| ✅ 15 | Implement a basic WebSocket echo server     | ✅ Done |
+| ✅ 16 | Stream audio from client to server          | ✅ Done |
+| ✅ 17 | Transcribe streaming audio with AssemblyAI  | ✅ Done |
+| ✅ 18 | Implement AssemblyAI turn detection         | ✅ Done |
+| ✅ 19 | Get streaming LLM responses                 | ✅ Done |
+| ✅ 20 | Stream text to Murf for TTS via WebSockets  | ✅ Done |
+| ✅ 21 | Stream TTS audio from server to client      | ✅ Done |
+| ✅ 22 | Play streaming audio on the client          | ✅ Done |
+| ✅ 23 | Integrate all parts into a voice agent      | ✅ Done |
+| ✅ 24 | Add a persona to the agent                  | ✅ Done |
+| ✅ 25 | Add a special skill (e.g., web search)      | ✅ Done |
+| ✅ 26 | Add a second special skill                  | ✅ Done |
+| ✅ 27 | UI revamp and allow user API keys           | ✅ Done |
+| ✅ 28 | Deploy the agent                            | ✅ Done |
+| ✅ 29 | Update final documentation/README.md        | ✅ Done |
 
 ## 🔥 What We Built So Far
 
@@ -113,13 +126,121 @@ This repo tracks my progress from **Day 1 to Day 30**, building AI-powered voice
 
 ---
 
-### ✅ Day 12 – UI Revamp & Conversation Flow Upgrade 🎨
-- Removed old TTS/Echo Bot UI → Now **pure Conversational Agent mode** 🎯  
-- Single smart **Start/Stop** button 🎤⏹️  
-- Added **End Session** button 🛑  
-- Clean, glowing mic button & sleeker audio visualizer  
-- Instant audio playback without bulky players  
-- Mobile-friendly redesign 📱  
+### ✅ Day 13 – Documentation with README.md 📄
+- Created a comprehensive `README.md` in the project root
+- Documented project purpose, features, architecture, and tech stack
+- Added step-by-step setup, dependency installation, and API key instructions
+
+---
+
+### ✅ Day 14 – Code Refactoring & GitHub Upload 🛠️
+- Refactored codebase for clarity and maintainability
+- Moved third-party service logic (STT, TTS) to `/services` folder
+- Introduced Pydantic models for API schemas
+- Removed unused code and cleaned up imports
+- Uploaded the project to a public GitHub repository
+
+---
+
+### ✅ Day 15 – Basic WebSocket Implementation 🌐
+- Added `/ws` endpoint to FastAPI for WebSocket connections
+- Implemented simple echo functionality (server returns received messages)
+- Tested WebSocket with Postman and browser client
+
+---
+
+### ✅ Day 16 – Streaming Audio from Client to Server 🎙️
+- Updated client to stream audio chunks to server via WebSocket in real-time
+- Modified server to receive/process binary audio data
+- Saved streamed audio as a file on the server
+
+---
+
+### ✅ Day 17 – Real-time Transcription with AssemblyAI 📝
+- Integrated AssemblyAI SDK into WebSocket handler
+- Streamed incoming audio directly to AssemblyAI’s real-time transcription
+- Printed live transcription results to server console
+
+---
+
+### ✅ Day 18 – Implementing Turn Detection 🔄
+- Used AssemblyAI’s turn detection to identify when user stops speaking
+- Sent final transcript back to client at end of each turn
+- Displayed transcript in UI for seamless conversation flow
+
+---
+
+### ✅ Day 19 – Streaming Responses from LLM 🤖
+- Sent user transcript to Google Gemini LLM for response
+- Configured LLM API for streaming text responses
+- Accumulated and logged response chunks on server
+
+---
+
+### ✅ Day 20 – Streaming Text-to-Speech with Murf 🔊
+- Established WebSocket connection to Murf TTS API
+- Streamed LLM response text to Murf in chunks
+- Received and logged base64-encoded audio stream from Murf
+
+---
+
+### ✅ Day 21 – Streaming Audio Back to the Client 🔁
+- Relayed audio chunks from Murf to client via WebSocket
+- Client accumulated incoming audio data for playback
+- Verified data transfer with browser console logs
+
+---
+
+### ✅ Day 22 – Real-time Audio Playback 🎧
+- Implemented client-side streaming audio playback
+- Used Web Audio API to queue and play audio chunks as they arrived
+- Achieved smooth, continuous conversational experience
+
+---
+
+### ✅ Day 23 – Full End-to-End Integration 🚀
+- Connected all components for a complete conversational voice agent
+- Flow: real-time transcription → LLM response → TTS → streaming playback
+- Added chat history saving for session review
+
+---
+
+### ✅ Day 24 – Adding an Agent Persona 🦸
+- Customized system prompt for LLM to define agent persona (e.g., pirate, robot)
+- Ensured responses matched chosen persona’s tone and style
+
+---
+
+### ✅ Day 25 – Adding a Special Skill (Function Calling) 🛠️
+- Integrated LLM function-calling for special skills (e.g., web search via Tavily API)
+- Enabled agent to answer questions using external tools
+
+---
+
+### ✅ Day 26 – Adding a Second Special Skill 🧩
+- Expanded agent with an additional skill (e.g., weather lookup)
+- Broadened agent’s ability to handle complex, multi-domain queries
+
+---
+
+### ✅ Day 27 – UI Revamp and Configuration ⚙️
+- Improved UI with a configuration section for user API keys
+- Allowed users to enter their own Murf, AssemblyAI, and Gemini keys
+- Enhanced flexibility and user control
+
+---
+
+### ✅ Day 28 – Deploying the Agent 🌍
+- Finalized dependencies and production configs
+- Deployed FastAPI backend and frontend to Render
+- Shared public URL for live demo
+
+---
+
+### ✅ Day 29 – Final Documentation Update 📝
+- Thoroughly updated `README.md` with all new features and instructions
+- Documented persona, special skills, and user-configurable API keys
+- Polished setup and deployment steps for end users
 
 ---
 
@@ -185,10 +306,13 @@ GEMINI_API_KEY=your_gemini_api_key_here
 > - **Murf.ai**: Sign up at [murf.ai](https://murf.ai)
 > - **AssemblyAI**: Create account at [assemblyai.com](https://www.assemblyai.com)
 > - **Google Gemini**: Get key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+> - **Tavily (Web Search Skill)**: Register for a free API key at [tavily.com](https://www.tavily.com)
 
 #### 5️⃣ Start the FastAPI Server
 ```bash
-uvicorn main:app --reload
+```bash
+uvicorn app.main:app --reload
+```
 ```
 
 > ✅ **Success!** You should see: `Uvicorn running on http://127.0.0.1:8000`
@@ -218,12 +342,11 @@ deactivate
 ### 📱 Quick Start Commands (Copy & Paste)
 ```bash
 # All-in-one commands for Windows
-git clone https://github.com/your-username/ai-voice-agent.git && cd ai-voice-agent && python -m venv venv && venv\Scripts\activate && pip install -r requirements.txt
+git clone https://github.com/Shubhachand/30daysAiChallange.git && cd 30daysAiChallange && python -m venv venv && venv\Scripts\activate && pip install -r requirements.txt
 
 # All-in-one commands for Mac/Linux
-git clone https://github.com/your-username/ai-voice-agent.git && cd ai-voice-agent && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+git clone https://github.com/Shubhachand/30daysAiChallange.git && cd 30daysAiChallange && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
 ```
-
 
 
 
@@ -251,7 +374,7 @@ Made with ❤️ and curiosity.
 ### 👨‍💻 Author
 
 **Shubhachand Patel**  
-🧑‍🎓 3rd year student | Full-stack & AI enthusiast  
+🎓 Final year student | Full-stack & AI enthusiast  
 🔗 [LinkedIn](https://www.linkedin.com/in/shubhachand/) 
 
 ---
